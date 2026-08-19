@@ -46,6 +46,15 @@ input,select{font-family:var(--font);color:var(--text)}
 
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:20px}
 .card-title{font-size:14px;font-weight:700;margin-bottom:14px;font-family:var(--serif)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-bottom:24px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--accent)}
+.sc-num{font-size:26px;font-weight:700;font-family:var(--serif);line-height:1}
+.sc-lbl{font-size:11.5px;color:var(--text3);margin-top:4px}
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.qa{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;color:var(--text2)}
+.qa:hover{background:var(--surface2);border-color:var(--accent)}
+.qa-icon{font-size:22px}
 .fg{margin-bottom:14px}
 .fl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 .fi{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);outline:none;font-size:14px}
@@ -74,7 +83,8 @@ tr:last-child td{border-bottom:none}
       <div><div class="sb-name">ปพ.5 · LikhitTH</div><div class="sb-role">ครู</div></div>
     </div>
     <nav class="sb-nav">
-      <button class="ni active" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
+      <button class="ni active" data-p="home" onclick="nav('home')"><span class="ni-icon">🏠</span><span>หน้าหลัก</span></button>
+      <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
     </nav>
@@ -82,10 +92,23 @@ tr:last-child td{border-bottom:none}
   </aside>
 
   <div id="main">
-    <div id="topbar"><div class="pg-title" id="pgTitle">บันทึกคะแนน</div></div>
+    <div id="topbar"><div class="pg-title" id="pgTitle">หน้าหลัก</div></div>
     <div id="content">
 
-      <div class="page active" id="page-score">
+      <div class="page active" id="page-home">
+        <div class="stats-grid">
+          <div class="sc"><div class="sc-num" id="stNumScore">0</div><div class="sc-lbl">คะแนนที่บันทึกแล้ว</div></div>
+          <div class="sc"><div class="sc-num" id="stNumAtt">0</div><div class="sc-lbl">เวลาเรียนที่บันทึกแล้ว</div></div>
+        </div>
+        <div class="card-title" style="margin-bottom:12px">⚡ Quick Actions</div>
+        <div class="qa-grid">
+          <button class="qa" onclick="nav('score')"><span class="qa-icon">📊</span><span>กรอกคะแนน</span></button>
+          <button class="qa" onclick="nav('attendance')"><span class="qa-icon">📅</span><span>บันทึกเวลาเรียน</span></button>
+          <button class="qa" onclick="nav('settings')"><span class="qa-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
+        </div>
+      </div>
+
+      <div class="page" id="page-score">
         <div class="card">
           <div class="card-title">➕ บันทึกคะแนนรายวิชา</div>
           <div class="frow">
@@ -152,7 +175,14 @@ tr:last-child td{border-bottom:none}
 
 <script>
 var subjectFullMap = {};
-var PAGE_TITLES = {score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var scoreCache = [];
+var attendanceCache = [];
+var PAGE_TITLES = {home:'หน้าหลัก',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+
+function updateDashboard(){
+  document.getElementById('stNumScore').textContent=scoreCache.length;
+  document.getElementById('stNumAtt').textContent=attendanceCache.length;
+}
 
 function nav(p){
   document.querySelectorAll('.ni').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
@@ -167,12 +197,15 @@ function saveUrl(){
   toast('บันทึก URL แล้ว');
   checkSetup();
 }
-function checkSetup(){
+async function checkSetup(){
   const u=getUrl();
   document.getElementById('scriptUrl').value=u;
   document.getElementById('connDot').classList.toggle('on',!!u);
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
-  if(u){loadStudentOptions();loadSubjectOptions();loadScores();loadAttendance();}
+  if(u){
+    await Promise.all([loadStudentOptions(),loadSubjectOptions(),loadScores(),loadAttendance()]);
+    updateDashboard();
+  }
   else nav('settings');
 }
 function toast(msg,type){
@@ -253,11 +286,13 @@ async function submitScore(){
 async function loadScores(){
   const rows=await fetchType('score');
   const list=rows.slice(1);
+  scoreCache=list;
   const tbody=document.getElementById('listScore');
   if(list.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
   else{
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td><td class="tc">${r[7]??''}</td><td class="tc">${r[8]??''}</td></tr>`).join('');
   }
+  updateDashboard();
 }
 
 document.getElementById('btnAttendance').dataset.label='💾 บันทึกเวลาเรียน';
@@ -280,11 +315,13 @@ async function submitAttendance(){
 async function loadAttendance(){
   const rows=await fetchType('attendance');
   const list=rows.slice(1);
+  attendanceCache=list;
   const tbody=document.getElementById('listAttendance');
   if(list.length===0){tbody.innerHTML='<tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
   else{
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
   }
+  updateDashboard();
 }
 
 checkSetup();
