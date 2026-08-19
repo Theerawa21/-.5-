@@ -8,9 +8,7 @@ var SHEETS = {
   attendance: 'เวลาเรียน',
   teacher: 'ครู',
   class: 'ชั้นเรียน',
-  holiday: 'วันหยุด',
-  club: 'ชุมนุม',
-  activity: 'กิจกรรมพัฒนาฯ'
+  holiday: 'วันหยุด'
 };
 
 var HEADERS = {
@@ -20,9 +18,7 @@ var HEADERS = {
   เวลาเรียน: ['รหัสนักเรียน','ชื่อ-สกุล','ภาคเรียน','มาเรียน(วัน)','ขาด(วัน)','ลา(วัน)','สาย(ครั้ง)','บันทึกเมื่อ'],
   ครู: ['รหัส','ชื่อ-สกุล','ตำแหน่ง','บันทึกเมื่อ'],
   ชั้นเรียน: ['รหัส','ชื่อชั้น','ครูประจำชั้น','บันทึกเมื่อ'],
-  วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ'],
-  ชุมนุม: ['รหัส','ชื่อชุมนุม','บันทึกเมื่อ'],
-  'กิจกรรมพัฒนาฯ': ['รหัส','รหัสนักเรียน','ชื่อ-สกุล','ภาคเรียน','แนะแนว','ลูกเสือ/เนตรนารี','ชุมนุม','ชื่อชุมนุมที่เลือก','กิจกรรมเพื่อสังคมฯ','ผลรวม','บันทึกเมื่อ']
+  วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ']
 };
 
 function getOrCreateSheet_(name) {
@@ -135,20 +131,6 @@ function doPost(e) {
     deleteRowById_(SHEETS.holiday, data.id);
   } else if (type === 'settings') {
     saveSettings_(data.settings || {});
-  } else if (type === 'club') {
-    var sh = getOrCreateSheet_(SHEETS.club);
-    sh.appendRow([newId_(), data.name || '', new Date()]);
-  } else if (type === 'club_del') {
-    deleteRowById_(SHEETS.club, data.id);
-  } else if (type === 'activity') {
-    var sh = getOrCreateSheet_(SHEETS.activity);
-    var vals = [data.guidance, data.scout, data.club, data.social];
-    var overall = vals.every(function (v) { return v === 'ผ่าน'; }) ? 'ผ่าน' : 'ไม่ผ่าน';
-    sh.appendRow([
-      newId_(), data.sid || '', data.studentName || '', data.term || '',
-      data.guidance || '', data.scout || '', data.club || '', data.clubName || '', data.social || '',
-      overall, new Date()
-    ]);
   } else {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'unknown type' }))
       .setMimeType(ContentService.MimeType.JSON);

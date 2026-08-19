@@ -55,7 +55,6 @@ input,select{font-family:var(--font);color:var(--text)}
 .qa{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;color:var(--text2)}
 .qa:hover{background:var(--surface2);border-color:var(--accent)}
 .qa-icon{font-size:22px}
-.hint{font-size:12px;color:var(--text3);margin-top:8px;margin-bottom:12px;line-height:1.5}
 .fg{margin-bottom:14px}
 .fl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 .fi{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);outline:none;font-size:14px}
@@ -87,7 +86,6 @@ tr:last-child td{border-bottom:none}
       <button class="ni active" data-p="home" onclick="nav('home')"><span class="ni-icon">🏠</span><span>หน้าหลัก</span></button>
       <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
-      <button class="ni" data-p="activity" onclick="nav('activity')"><span class="ni-icon">🎯</span><span>กิจกรรมพัฒนาฯ</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
     </nav>
     <div class="sb-foot"><span class="dot" id="connDot"></span><span id="connText">ยังไม่ได้เชื่อมต่อ</span></div>
@@ -106,7 +104,6 @@ tr:last-child td{border-bottom:none}
         <div class="qa-grid">
           <button class="qa" onclick="nav('score')"><span class="qa-icon">📊</span><span>กรอกคะแนน</span></button>
           <button class="qa" onclick="nav('attendance')"><span class="qa-icon">📅</span><span>บันทึกเวลาเรียน</span></button>
-          <button class="qa" onclick="nav('activity')"><span class="qa-icon">🎯</span><span>กิจกรรมพัฒนาฯ</span></button>
           <button class="qa" onclick="nav('settings')"><span class="qa-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
         </div>
       </div>
@@ -162,38 +159,6 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
-      <div class="page" id="page-activity">
-        <div class="card">
-          <div class="card-title">➕ ประเมินกิจกรรมพัฒนาผู้เรียน</div>
-          <p class="hint">ต้องได้ "ผ่าน" ครบทั้ง 4 กิจกรรม จึงสรุปผลรวมเป็น "ผ่าน" — ขาดข้อใดข้อหนึ่งถือว่าไม่ผ่าน</p>
-          <div class="frow">
-            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="acStudent"><option value="">— เลือกนักเรียน —</option></select></div>
-            <div class="fg"><label class="fl">ภาคเรียน</label><input class="fi" id="acTerm" placeholder="เช่น 1/2569"></div>
-          </div>
-          <div class="frow">
-            <div class="fg"><label class="fl">แนะแนว</label><select class="fi" id="acGuidance"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
-            <div class="fg"><label class="fl">ลูกเสือ/เนตรนารี</label><select class="fi" id="acScout"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
-          </div>
-          <div class="frow">
-            <div class="fg"><label class="fl">ชุมนุม</label><select class="fi" id="acClub"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
-            <div class="fg"><label class="fl">เลือกชุมนุม</label><select class="fi" id="acClubName"><option value="">— เลือกชุมนุม —</option></select></div>
-          </div>
-          <div class="frow">
-            <div class="fg"><label class="fl">กิจกรรมเพื่อสังคมฯ</label><select class="fi" id="acSocial"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
-          </div>
-          <button class="btn btn-p" id="btnActivity" onclick="submitActivity()">💾 บันทึกผลการประเมิน</button>
-        </div>
-        <div class="card">
-          <div class="card-title" style="display:flex;justify-content:space-between">
-            <span>📄 ผลการประเมินที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadActivities()">🔄 โหลดใหม่</button>
-          </div>
-          <div class="tw"><table>
-            <thead><tr><th>นักเรียน</th><th>ภาคเรียน</th><th>แนะแนว</th><th>ลูกเสือฯ</th><th>ชุมนุม</th><th>สังคมฯ</th><th>ผลรวม</th></tr></thead>
-            <tbody id="listActivity"><tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
-          </table></div>
-        </div>
-      </div>
-
       <div class="page" id="page-settings">
         <div class="card">
           <div class="card-title">⚙️ ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</div>
@@ -212,8 +177,7 @@ tr:last-child td{border-bottom:none}
 var subjectFullMap = {};
 var scoreCache = [];
 var attendanceCache = [];
-var PAGE_TITLES = {home:'หน้าหลัก',score:'บันทึกคะแนน',attendance:'เวลาเรียน',activity:'กิจกรรมพัฒนาฯ',settings:'ตั้งค่าการเชื่อมต่อ'};
-var activityCache = [];
+var PAGE_TITLES = {home:'หน้าหลัก',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
 
 function updateDashboard(){
   document.getElementById('stNumScore').textContent=scoreCache.length;
@@ -239,7 +203,7 @@ async function checkSetup(){
   document.getElementById('connDot').classList.toggle('on',!!u);
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
   if(u){
-    await Promise.all([loadStudentOptions(),loadSubjectOptions(),loadScores(),loadAttendance(),loadClubOptions(),loadActivities()]);
+    await Promise.all([loadStudentOptions(),loadSubjectOptions(),loadScores(),loadAttendance()]);
     updateDashboard();
   }
   else nav('settings');
@@ -288,7 +252,6 @@ async function loadStudentOptions(){
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
-  document.getElementById('acStudent').innerHTML=opts;
   if(list.length===0)toast('ยังไม่มีรายชื่อนักเรียน — แจ้งผู้ดูแลระบบให้เพิ่มก่อน','err');
 }
 async function loadSubjectOptions(){
@@ -359,42 +322,6 @@ async function loadAttendance(){
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
   }
   updateDashboard();
-}
-
-// ── กิจกรรมพัฒนาฯ ──
-async function loadClubOptions(){
-  const rows=await fetchType('club');
-  const list=rows.slice(1);
-  const opts='<option value="">— เลือกชุมนุม —</option>'+list.map(r=>`<option value="${r[1]}">${r[1]}</option>`).join('');
-  document.getElementById('acClubName').innerHTML=opts;
-}
-document.getElementById('btnActivity').dataset.label='💾 บันทึกผลการประเมิน';
-async function submitActivity(){
-  const stSel=document.getElementById('acStudent');
-  if(!stSel.value){toast('กรุณาเลือกนักเรียน','err');return;}
-  const data={type:'activity',
-    sid:stSel.value,
-    studentName:stSel.selectedOptions[0].dataset.name,
-    term:document.getElementById('acTerm').value.trim(),
-    guidance:document.getElementById('acGuidance').value,
-    scout:document.getElementById('acScout').value,
-    club:document.getElementById('acClub').value,
-    clubName:document.getElementById('acClubName').value,
-    social:document.getElementById('acSocial').value};
-  if(await postData(data,'btnActivity','บันทึกผลการประเมินแล้ว ✅')){
-    document.getElementById('acTerm').value='';
-    loadActivities();
-  }
-}
-async function loadActivities(){
-  const rows=await fetchType('activity');
-  const list=rows.slice(1);
-  activityCache=list;
-  const tbody=document.getElementById('listActivity');
-  if(list.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
-  else{
-    tbody.innerHTML=list.map(r=>`<tr><td>${r[2]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}${r[7]?' ('+r[7]+')':''}</td><td class="tc">${r[8]??''}</td><td class="tc">${r[9]??''}</td></tr>`).join('');
-  }
 }
 
 checkSetup();
