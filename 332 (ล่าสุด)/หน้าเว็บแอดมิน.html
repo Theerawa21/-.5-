@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ผู้ดูแลระบบ — ปพ.5</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f3ee;--surface:#fffef9;--surface2:#f0ede6;
+  --border:#ddd9ce;--border2:#c8c3b8;
+  --text:#2c2820;--text2:#6b6358;--text3:#9e978d;
+  --accent:#2d6a4f;--accent2:#1b4332;--accent-light:#d8f3dc;
+  --gold:#b5860d;--gold-light:#fef9ed;
+  --red:#c0392b;--red-light:#fdecea;
+  --sw:228px;--r:10px;
+  --sh:0 2px 12px rgba(0,0,0,.08);--sh2:0 8px 32px rgba(0,0,0,.13);
+  --font:'Sarabun',sans-serif;--serif:'Noto Serif Thai',serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+button{cursor:pointer;font-family:var(--font)}
+input,select{font-family:var(--font);color:var(--text)}
+
+#app{display:flex;min-height:100vh}
+#sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200}
+#main{margin-left:var(--sw);flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh}
+
+.sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo{width:36px;height:36px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-name{font-size:13px;font-weight:700}
+.sb-role{font-size:10px;letter-spacing:1px;color:var(--gold);font-weight:700;text-transform:uppercase;background:var(--gold-light);display:inline-block;padding:1px 6px;border-radius:4px;margin-top:2px}
+.sb-nav{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13.5px;white-space:nowrap;border:none;background:none;width:100%;text-align:left;transition:background .15s,color .15s}
+.ni:hover{background:var(--surface2);color:var(--text)}
+.ni.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.ni-icon{font-size:17px;flex-shrink:0;width:20px;text-align:center}
+.sb-foot{padding:12px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:5px}
+.dot.on{background:var(--accent)}
+
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.pg-title{font-size:18px;font-weight:700;font-family:var(--serif);flex:1}
+#content{flex:1;padding:24px;max-width:820px}
+.page{display:none}
+.page.active{display:block}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--sh);margin-bottom:20px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;font-family:var(--serif)}
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.fi{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);outline:none;font-size:14px}
+.fi:focus{border-color:var(--accent)}
+.frow{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:7px;font-size:14px;font-weight:500;border:none}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent2)}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--border)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-size:11px;text-transform:uppercase}
+td{padding:9px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.tc{text-align:center}
+#toast-c{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;box-shadow:var(--sh2);font-size:13.5px;min-width:220px;border-left:4px solid var(--accent)}
+.toast.err{border-left-color:var(--red)}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sb-head">
+      <div class="sb-logo">📋</div>
+      <div><div class="sb-name">ปพ.5 · LikhitTH</div><div class="sb-role">ผู้ดูแลระบบ</div></div>
+    </div>
+    <nav class="sb-nav">
+      <button class="ni active" data-p="student" onclick="nav('student')"><span class="ni-icon">👥</span><span>นักเรียน</span></button>
+      <button class="ni" data-p="subject" onclick="nav('subject')"><span class="ni-icon">📚</span><span>รายวิชา</span></button>
+      <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
+      <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
+      <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
+    </nav>
+    <div class="sb-foot"><span class="dot" id="connDot"></span><span id="connText">ยังไม่ได้เชื่อมต่อ</span></div>
+  </aside>
+
+  <div id="main">
+    <div id="topbar"><div class="pg-title" id="pgTitle">นักเรียน</div></div>
+    <div id="content">
+
+      <div class="page active" id="page-student">
+        <div class="card">
+          <div class="card-title">➕ เพิ่มนักเรียน</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">เลขที่</label><input class="fi" id="fNo" type="number" min="1"></div>
+            <div class="fg"><label class="fl">คำนำหน้า</label>
+              <select class="fi" id="fPrefix" onchange="syncGender()">
+                <option>เด็กชาย</option><option>เด็กหญิง</option><option>นาย</option><option>นาง</option><option>นางสาว</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">เพศ</label><select class="fi" id="fGender"><option>ชาย</option><option>หญิง</option></select></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชื่อ</label><input class="fi" id="fFname"></div>
+            <div class="fg"><label class="fl">นามสกุล</label><input class="fi" id="fLname"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชั้น</label><input class="fi" id="fGrade" placeholder="เช่น ป.6"></div>
+            <div class="fg"><label class="fl">ห้อง</label><input class="fi" id="fRoom"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">รหัสนักเรียน</label><input class="fi" id="fSid"></div>
+            <div class="fg"><label class="fl">เลขประจำตัวประชาชน</label><input class="fi" id="fCid" maxlength="13"></div>
+            <div class="fg"><label class="fl">วันเกิด</label><input class="fi" id="fBday" type="date"></div>
+          </div>
+          <button class="btn btn-p" id="btnStudent" onclick="submitStudent()">💾 บันทึกนักเรียน</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 รายชื่อที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadStudents()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>ที่</th><th>คำนำหน้า</th><th>ชื่อ</th><th>นามสกุล</th><th>เพศ</th><th>ชั้น</th><th>ห้อง</th><th>รหัสนร.</th></tr></thead>
+            <tbody id="listStudent"><tr><td colspan="8" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-subject">
+        <div class="card">
+          <div class="card-title">➕ เพิ่มรายวิชา</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">รหัสวิชา</label><input class="fi" id="sCode" placeholder="เช่น ท16101"></div>
+            <div class="fg"><label class="fl">ชื่อวิชา</label><input class="fi" id="sName" placeholder="เช่น ภาษาไทย"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">เก็บคะแนนเต็ม</label><input class="fi" id="sFullFormative" type="number" value="70"></div>
+            <div class="fg"><label class="fl">กลางภาคเต็ม</label><input class="fi" id="sFullMid" type="number" value="15"></div>
+            <div class="fg"><label class="fl">ปลายภาคเต็ม</label><input class="fi" id="sFullFinal" type="number" value="15"></div>
+          </div>
+          <button class="btn btn-p" id="btnSubject" onclick="submitSubject()">💾 บันทึกรายวิชา</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 รายวิชาที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadSubjects()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>เก็บคะแนน</th><th>กลางภาค</th><th>ปลายภาค</th><th>เต็ม</th></tr></thead>
+            <tbody id="listSubject"><tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-score">
+        <div class="card">
+          <div class="card-title">➕ บันทึกคะแนนรายวิชา</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="scStudent"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="scSubject"><option value="">— เลือกวิชา —</option></select></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">เก็บคะแนน</label><input class="fi" id="scFormative" type="number"></div>
+            <div class="fg"><label class="fl">กลางภาค</label><input class="fi" id="scMid" type="number"></div>
+            <div class="fg"><label class="fl">ปลายภาค</label><input class="fi" id="scFinal" type="number"></div>
+          </div>
+          <button class="btn btn-p" id="btnScore" onclick="submitScore()">💾 บันทึกคะแนน</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 คะแนนที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadScores()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>นักเรียน</th><th>วิชา</th><th>เก็บคะแนน</th><th>กลางภาค</th><th>ปลายภาค</th><th>รวม</th><th>เกรด</th></tr></thead>
+            <tbody id="listScore"><tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-attendance">
+        <div class="card">
+          <div class="card-title">➕ บันทึกเวลาเรียน (สรุปจำนวนวัน)</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="atStudent"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">ภาคเรียน</label><input class="fi" id="atTerm" placeholder="เช่น 1/2569"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">มาเรียน (วัน)</label><input class="fi" id="atPresent" type="number"></div>
+            <div class="fg"><label class="fl">ขาด (วัน)</label><input class="fi" id="atAbsent" type="number"></div>
+            <div class="fg"><label class="fl">ลา (วัน)</label><input class="fi" id="atLeave" type="number"></div>
+            <div class="fg"><label class="fl">สาย (ครั้ง)</label><input class="fi" id="atLate" type="number"></div>
+          </div>
+          <button class="btn btn-p" id="btnAttendance" onclick="submitAttendance()">💾 บันทึกเวลาเรียน</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 เวลาเรียนที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadAttendance()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>นักเรียน</th><th>ภาคเรียน</th><th>มาเรียน</th><th>ขาด</th><th>ลา</th><th>สาย</th></tr></thead>
+            <tbody id="listAttendance"><tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-settings">
+        <div class="card">
+          <div class="card-title">⚙️ ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</div>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">ต้องนำ Code.gs ไปติดตั้งเป็น Apps Script ของชีต "ปพ.5" ก่อน แล้ววาง URL ที่ได้จากการ Deploy ไว้ด้านล่าง (ดูขั้นตอนในไฟล์ คำแนะนำการติดตั้ง.txt)</p>
+          <div class="fg"><label class="fl">Web App URL (จาก Apps Script Deploy)</label><input class="fi" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec"></div>
+          <button class="btn btn-p btn-sm" onclick="saveUrl()">💾 บันทึก URL</button>
+          <p style="font-size:12px;color:var(--text3);margin-top:12px">คัดลอก URL นี้ไปวางในหน้าเว็บครู (หน้าเว็บครู.html) ให้ครูใช้งานร่วมชีตเดียวกัน</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="toast-c"></div>
+
+<script>
+var subjectFullMap = {};
+var studentCache = [];
+var PAGE_TITLES = {student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+
+function nav(p){
+  document.querySelectorAll('.ni').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('active',pg.id==='page-'+p));
+  document.getElementById('pgTitle').textContent=PAGE_TITLES[p];
+}
+function getUrl(){return localStorage.getItem('sf_url')||'';}
+function saveUrl(){
+  const u=document.getElementById('scriptUrl').value.trim();
+  if(!u){toast('กรุณาวาง URL ก่อน','err');return;}
+  localStorage.setItem('sf_url',u);
+  toast('บันทึก URL แล้ว');
+  checkSetup();
+}
+function checkSetup(){
+  const u=getUrl();
+  document.getElementById('scriptUrl').value=u;
+  document.getElementById('connDot').classList.toggle('on',!!u);
+  document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
+  if(u){loadStudents();loadSubjects();loadScores();loadAttendance();}
+  else nav('settings');
+}
+function syncGender(){
+  const p=document.getElementById('fPrefix').value;
+  document.getElementById('fGender').value=(p==='เด็กชาย'||p==='นาย')?'ชาย':'หญิง';
+}
+function toast(msg,type){
+  const c=document.getElementById('toast-c');
+  const t=document.createElement('div');
+  t.className='toast'+(type==='err'?' err':'');
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+async function postData(payload,btnId,okMsg){
+  const url=getUrl();
+  if(!url){toast('กรุณาตั้งค่า Web App URL ก่อน','err');nav('settings');return false;}
+  const btn=btnId?document.getElementById(btnId):null;
+  if(btn){btn.disabled=true;btn.textContent='กำลังบันทึก...';}
+  let ok=false;
+  try{
+    const res=await fetch(url,{method:'POST',body:JSON.stringify(payload)});
+    const j=await res.json();
+    if(j.status==='ok'){toast(okMsg);ok=true;}
+    else toast('บันทึกไม่สำเร็จ: '+(j.message||''),'err');
+  }catch(err){
+    toast('เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL','err');
+  }
+  if(btn){btn.disabled=false;btn.textContent=btn.dataset.label;}
+  return ok;
+}
+async function fetchType(type){
+  const url=getUrl();
+  if(!url)return [];
+  try{
+    const res=await fetch(url+'?type='+type);
+    const rows=await res.json();
+    return Array.isArray(rows)?rows:[];
+  }catch(err){return [];}
+}
+
+document.getElementById('btnStudent').dataset.label='💾 บันทึกนักเรียน';
+async function submitStudent(){
+  const fname=document.getElementById('fFname').value.trim();
+  if(!fname){toast('กรุณากรอกชื่อ','err');return;}
+  const data={type:'student',
+    no:document.getElementById('fNo').value,
+    prefix:document.getElementById('fPrefix').value,
+    fname:fname,
+    lname:document.getElementById('fLname').value.trim(),
+    gender:document.getElementById('fGender').value,
+    grade:document.getElementById('fGrade').value.trim(),
+    room:document.getElementById('fRoom').value.trim(),
+    sid:document.getElementById('fSid').value.trim(),
+    cid:document.getElementById('fCid').value.trim(),
+    bday:document.getElementById('fBday').value};
+  if(await postData(data,'btnStudent','บันทึกนักเรียนแล้ว ✅')){
+    ['fNo','fFname','fLname','fGrade','fRoom','fSid','fCid','fBday'].forEach(id=>document.getElementById(id).value='');
+    loadStudents();
+  }
+}
+async function loadStudents(){
+  const rows=await fetchType('student');
+  const tbody=document.getElementById('listStudent');
+  studentCache=rows.slice(1);
+  if(studentCache.length===0){tbody.innerHTML='<tr><td colspan="8" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=studentCache.map(r=>`<tr><td class="tc">${r[0]??''}</td><td>${r[1]??''}</td><td>${r[2]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td>${r[8]??''}</td><td>${r[9]??''}</td><td>${r[5]??''}</td></tr>`).join('');
+  }
+  const opts='<option value="">— เลือกนักเรียน —</option>'+studentCache.map(r=>{
+    const sid=r[5]||''; const name=(r[1]||'')+(r[2]||'')+' '+(r[3]||'');
+    return `<option value="${sid}" data-name="${(r[2]||'')+' '+(r[3]||'')}">${name} (${sid})</option>`;
+  }).join('');
+  document.getElementById('scStudent').innerHTML=opts;
+  document.getElementById('atStudent').innerHTML=opts;
+}
+
+document.getElementById('btnSubject').dataset.label='💾 บันทึกรายวิชา';
+async function submitSubject(){
+  const name=document.getElementById('sName').value.trim();
+  if(!name){toast('กรุณากรอกชื่อวิชา','err');return;}
+  const data={type:'subject',
+    code:document.getElementById('sCode').value.trim(),
+    name:name,
+    fullFormative:document.getElementById('sFullFormative').value,
+    fullMid:document.getElementById('sFullMid').value,
+    fullFinal:document.getElementById('sFullFinal').value};
+  if(await postData(data,'btnSubject','บันทึกรายวิชาแล้ว ✅')){
+    document.getElementById('sCode').value='';document.getElementById('sName').value='';
+    loadSubjects();
+  }
+}
+async function loadSubjects(){
+  const rows=await fetchType('subject');
+  const list=rows.slice(1);
+  const tbody=document.getElementById('listSubject');
+  subjectFullMap={};
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>{
+      const full=(Number(r[2])||0)+(Number(r[3])||0)+(Number(r[4])||0);
+      subjectFullMap[r[0]]=full;
+      return `<tr><td>${r[0]??''}</td><td>${r[1]??''}</td><td class="tc">${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${full}</td></tr>`;
+    }).join('');
+  }
+  const opts='<option value="">— เลือกวิชา —</option>'+list.map(r=>`<option value="${r[0]}" data-name="${r[1]}">${r[1]} (${r[0]})</option>`).join('');
+  document.getElementById('scSubject').innerHTML=opts;
+}
+
+document.getElementById('btnScore').dataset.label='💾 บันทึกคะแนน';
+async function submitScore(){
+  const stSel=document.getElementById('scStudent');
+  const sjSel=document.getElementById('scSubject');
+  if(!stSel.value){toast('กรุณาเลือกนักเรียน','err');return;}
+  if(!sjSel.value){toast('กรุณาเลือกวิชา','err');return;}
+  const data={type:'score',
+    sid:stSel.value,
+    studentName:stSel.selectedOptions[0].dataset.name,
+    subjectCode:sjSel.value,
+    subjectName:sjSel.selectedOptions[0].dataset.name,
+    formative:document.getElementById('scFormative').value,
+    mid:document.getElementById('scMid').value,
+    fin:document.getElementById('scFinal').value,
+    fullTotal:subjectFullMap[sjSel.value]||100};
+  if(await postData(data,'btnScore','บันทึกคะแนนแล้ว ✅')){
+    document.getElementById('scFormative').value='';document.getElementById('scMid').value='';document.getElementById('scFinal').value='';
+    loadScores();
+  }
+}
+async function loadScores(){
+  const rows=await fetchType('score');
+  const list=rows.slice(1);
+  const tbody=document.getElementById('listScore');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td><td class="tc">${r[7]??''}</td><td class="tc">${r[8]??''}</td></tr>`).join('');
+  }
+}
+
+document.getElementById('btnAttendance').dataset.label='💾 บันทึกเวลาเรียน';
+async function submitAttendance(){
+  const stSel=document.getElementById('atStudent');
+  if(!stSel.value){toast('กรุณาเลือกนักเรียน','err');return;}
+  const data={type:'attendance',
+    sid:stSel.value,
+    studentName:stSel.selectedOptions[0].dataset.name,
+    term:document.getElementById('atTerm').value.trim(),
+    present:document.getElementById('atPresent').value,
+    absent:document.getElementById('atAbsent').value,
+    leave:document.getElementById('atLeave').value,
+    late:document.getElementById('atLate').value};
+  if(await postData(data,'btnAttendance','บันทึกเวลาเรียนแล้ว ✅')){
+    document.getElementById('atTerm').value='';document.getElementById('atPresent').value='';document.getElementById('atAbsent').value='';document.getElementById('atLeave').value='';document.getElementById('atLate').value='';
+    loadAttendance();
+  }
+}
+async function loadAttendance(){
+  const rows=await fetchType('attendance');
+  const list=rows.slice(1);
+  const tbody=document.getElementById('listAttendance');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
+  }
+}
+
+checkSetup();
+</script>
+</body>
+</html>
