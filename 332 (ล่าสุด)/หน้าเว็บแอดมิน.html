@@ -101,6 +101,8 @@ tr:last-child td{border-bottom:none}
       <button class="ni" data-p="subject" onclick="nav('subject')"><span class="ni-icon">📚</span><span>รายวิชา</span></button>
       <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
+      <button class="ni" data-p="club" onclick="nav('club')"><span class="ni-icon">🎪</span><span>ชุมนุม</span></button>
+      <button class="ni" data-p="activity" onclick="nav('activity')"><span class="ni-icon">🎯</span><span>กิจกรรมพัฒนาฯ</span></button>
       <button class="ni" data-p="schoolsettings" onclick="nav('schoolsettings')"><span class="ni-icon">🏫</span><span>ตั้งค่าโรงเรียน</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
     </nav>
@@ -244,6 +246,55 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <div class="page" id="page-club">
+        <div class="card">
+          <div class="card-title">➕ เพิ่มชุมนุม</div>
+          <div class="fg"><label class="fl">ชื่อชุมนุม</label><input class="fi" id="cuName" placeholder="เช่น ชุมนุมดนตรีไทย"></div>
+          <button class="btn btn-p" id="btnClub" onclick="addClub()">💾 บันทึกชุมนุม</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 ชุมนุมที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadClubs()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>ชื่อชุมนุม</th><th>จัดการ</th></tr></thead>
+            <tbody id="listClub"><tr><td colspan="2" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-activity">
+        <div class="card">
+          <div class="card-title">➕ ประเมินกิจกรรมพัฒนาผู้เรียน</div>
+          <p class="hint">ต้องได้ "ผ่าน" ครบทั้ง 4 กิจกรรม จึงสรุปผลรวมเป็น "ผ่าน" — ขาดข้อใดข้อหนึ่งถือว่าไม่ผ่าน</p>
+          <div class="frow">
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="acStudent"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">ภาคเรียน</label><input class="fi" id="acTerm" placeholder="เช่น 1/2569"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">แนะแนว</label><select class="fi" id="acGuidance"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
+            <div class="fg"><label class="fl">ลูกเสือ/เนตรนารี</label><select class="fi" id="acScout"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชุมนุม</label><select class="fi" id="acClub"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
+            <div class="fg"><label class="fl">เลือกชุมนุม</label><select class="fi" id="acClubName"><option value="">— เลือกชุมนุม —</option></select></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">กิจกรรมเพื่อสังคมฯ</label><select class="fi" id="acSocial"><option>ผ่าน</option><option>ไม่ผ่าน</option></select></div>
+          </div>
+          <button class="btn btn-p" id="btnActivity" onclick="submitActivity()">💾 บันทึกผลการประเมิน</button>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 ผลการประเมินที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadActivities()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>นักเรียน</th><th>ภาคเรียน</th><th>แนะแนว</th><th>ลูกเสือฯ</th><th>ชุมนุม</th><th>สังคมฯ</th><th>ผลรวม</th></tr></thead>
+            <tbody id="listActivity"><tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
       <div class="page" id="page-schoolsettings">
         <div class="card">
           <div class="card-title">🏫 ข้อมูลโรงเรียน</div>
@@ -380,11 +431,13 @@ var studentCache = [];
 var subjectCache = [];
 var scoreCache = [];
 var attendanceCache = [];
-var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',schoolsettings:'ตั้งค่าโรงเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',club:'ชุมนุม',activity:'กิจกรรมพัฒนาฯ',schoolsettings:'ตั้งค่าโรงเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
 var currentLogo = '';
 var teacherCache = [];
 var classCache = [];
 var holidayCache = [];
+var clubCache = [];
+var activityCache = [];
 
 function updateDashboard(){
   const total=studentCache.length;
@@ -417,7 +470,7 @@ async function checkSetup(){
   document.getElementById('connDot').classList.toggle('on',!!u);
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
   if(u){
-    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance(),loadSchoolSettings(),loadTeachers(),loadClasses(),loadHolidays()]);
+    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance(),loadSchoolSettings(),loadTeachers(),loadClasses(),loadHolidays(),loadClubs(),loadActivities()]);
     updateDashboard();
   }
   else nav('settings');
@@ -495,6 +548,7 @@ async function loadStudents(){
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
+  document.getElementById('acStudent').innerHTML=opts;
   updateDashboard();
 }
 
@@ -767,6 +821,62 @@ async function loadClasses(){
   if(list.length===0){tbody.innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
   else{
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td><button class="btn btn-d btn-xs" onclick="delClass('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
+}
+
+// ── ชุมนุม ──
+async function addClub(){
+  const name=document.getElementById('cuName').value.trim();
+  if(!name){toast('กรุณากรอกชื่อชุมนุม','err');return;}
+  if(await postData({type:'club',name},'btnClub','บันทึกชุมนุมแล้ว ✅')){
+    document.getElementById('cuName').value='';
+    loadClubs();
+  }
+}
+async function delClub(id){
+  if(await postData({type:'club_del',id},null,'ลบแล้ว')) loadClubs();
+}
+async function loadClubs(){
+  const rows=await fetchType('club');
+  const list=rows.slice(1);
+  clubCache=list;
+  const tbody=document.getElementById('listClub');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="2" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td><button class="btn btn-d btn-xs" onclick="delClub('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
+  const opts='<option value="">— เลือกชุมนุม —</option>'+list.map(r=>`<option value="${r[1]}">${r[1]}</option>`).join('');
+  document.getElementById('acClubName').innerHTML=opts;
+  if(list.length===0)toast('ยังไม่มีรายชื่อชุมนุม — ไปเพิ่มที่เมนู "ชุมนุม" ก่อน','err');
+}
+
+// ── กิจกรรมพัฒนาฯ ──
+document.getElementById('btnActivity').dataset.label='💾 บันทึกผลการประเมิน';
+async function submitActivity(){
+  const stSel=document.getElementById('acStudent');
+  if(!stSel.value){toast('กรุณาเลือกนักเรียน','err');return;}
+  const data={type:'activity',
+    sid:stSel.value,
+    studentName:stSel.selectedOptions[0].dataset.name,
+    term:document.getElementById('acTerm').value.trim(),
+    guidance:document.getElementById('acGuidance').value,
+    scout:document.getElementById('acScout').value,
+    club:document.getElementById('acClub').value,
+    clubName:document.getElementById('acClubName').value,
+    social:document.getElementById('acSocial').value};
+  if(await postData(data,'btnActivity','บันทึกผลการประเมินแล้ว ✅')){
+    document.getElementById('acTerm').value='';
+    loadActivities();
+  }
+}
+async function loadActivities(){
+  const rows=await fetchType('activity');
+  const list=rows.slice(1);
+  activityCache=list;
+  const tbody=document.getElementById('listActivity');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[2]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}${r[7]?' ('+r[7]+')':''}</td><td class="tc">${r[8]??''}</td><td class="tc">${r[9]??''}</td></tr>`).join('');
   }
 }
 
