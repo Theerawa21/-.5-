@@ -65,7 +65,18 @@ input,select{font-family:var(--font);color:var(--text)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:7px;font-size:14px;font-weight:500;border:none}
 .btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent2)}
 .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--border)}
+.btn-d{background:var(--red-light);color:var(--red);border:1px solid var(--red)}.btn-d:hover{background:var(--red);color:#fff}
 .btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.sub-title{font-size:12.5px;font-weight:700;color:var(--text2);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.3px}
+.sub-title:first-child{margin-top:0}
+.logo-box{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.logo-preview{width:64px;height:64px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.logo-preview img{width:100%;height:100%;object-fit:cover}
+.chk-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:8px}
+.hint{font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5}
+.calc-box{background:var(--surface2);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:12px;display:none}
+.calc-box.show{display:block}
 .tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
 th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-size:11px;text-transform:uppercase}
@@ -90,6 +101,7 @@ tr:last-child td{border-bottom:none}
       <button class="ni" data-p="subject" onclick="nav('subject')"><span class="ni-icon">📚</span><span>รายวิชา</span></button>
       <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
+      <button class="ni" data-p="schoolsettings" onclick="nav('schoolsettings')"><span class="ni-icon">🏫</span><span>ตั้งค่าโรงเรียน</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
     </nav>
     <div class="sb-foot"><span class="dot" id="connDot"></span><span id="connText">ยังไม่ได้เชื่อมต่อ</span></div>
@@ -232,6 +244,121 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <div class="page" id="page-schoolsettings">
+        <div class="card">
+          <div class="card-title">🏫 ข้อมูลโรงเรียน</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชื่อโรงเรียน</label><input class="fi" id="ssSchoolName"></div>
+            <div class="fg"><label class="fl">สังกัด</label><input class="fi" id="ssAffiliation"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ตำบล</label><input class="fi" id="ssTambon"></div>
+            <div class="fg"><label class="fl">อำเภอ</label><input class="fi" id="ssAmphoe"></div>
+            <div class="fg"><label class="fl">จังหวัด</label><input class="fi" id="ssChangwat"></div>
+          </div>
+          <div class="fg"><label class="fl">ตราโรงเรียน</label>
+            <div class="logo-box">
+              <div class="logo-preview" id="ssLogoPreview">🏫</div>
+              <div>
+                <input type="file" id="ssLogoFile" accept="image/*" style="display:none" onchange="onLogoPick(this)">
+                <button class="btn btn-s btn-sm" onclick="document.getElementById('ssLogoFile').click()">🖼️ เลือกรูป</button>
+                <button class="btn btn-s btn-sm" onclick="clearLogo()">🗑️ ลบโลโก้</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-p" id="btnSchoolInfo" onclick="saveSchoolInfo()">💾 บันทึกข้อมูลโรงเรียน</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">👩‍💼 ผู้ลงนามในเอกสาร</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชื่อผู้อำนวยการ</label><input class="fi" id="ssDirName" placeholder="เว้นว่างได้ — ระบบจะเว้นจุดไข่ปลาให้เซ็นเอง"></div>
+            <div class="fg"><label class="fl">ตำแหน่ง</label><input class="fi" id="ssDirTitle" value="ผู้อำนวยการโรงเรียน"></div>
+          </div>
+          <div class="sub-title">ผู้ลงนามเพิ่มเติม (สูงสุด 4 ตำแหน่ง)</div>
+          <div class="frow"><div class="fg"><input class="fi" id="ssSigner1Name" placeholder="ชื่อ"></div><div class="fg"><input class="fi" id="ssSigner1Title" placeholder="ตำแหน่ง"></div></div>
+          <div class="frow"><div class="fg"><input class="fi" id="ssSigner2Name" placeholder="ชื่อ"></div><div class="fg"><input class="fi" id="ssSigner2Title" placeholder="ตำแหน่ง"></div></div>
+          <div class="frow"><div class="fg"><input class="fi" id="ssSigner3Name" placeholder="ชื่อ"></div><div class="fg"><input class="fi" id="ssSigner3Title" placeholder="ตำแหน่ง"></div></div>
+          <div class="frow"><div class="fg"><input class="fi" id="ssSigner4Name" placeholder="ชื่อ"></div><div class="fg"><input class="fi" id="ssSigner4Title" placeholder="ตำแหน่ง"></div></div>
+          <div class="chk-row"><input type="checkbox" id="ssShowSignPp5"><label for="ssShowSignPp5">แสดงผู้ลงนามเพิ่มเติมบนปก ปพ.5</label></div>
+          <div class="chk-row"><input type="checkbox" id="ssShowSignPp6"><label for="ssShowSignPp6">แสดงผู้ลงนามเพิ่มเติมบนปก ปพ.6</label></div>
+          <button class="btn btn-p" id="btnSigners" onclick="saveSchoolInfo()">💾 บันทึกผู้ลงนาม</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📅 ปฏิทินการเรียน</div>
+          <div class="sub-title">ภาคเรียนที่ 1</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">วันเปิดเรียน</label><input class="fi" id="ssT1Start" type="date"></div>
+            <div class="fg"><label class="fl">วันปิดภาคเรียน</label><input class="fi" id="ssT1End" type="date"></div>
+          </div>
+          <div class="sub-title">ภาคเรียนที่ 2</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">วันเปิดเรียน</label><input class="fi" id="ssT2Start" type="date"></div>
+            <div class="fg"><label class="fl">วันปิดภาคเรียน</label><input class="fi" id="ssT2End" type="date"></div>
+          </div>
+          <p class="hint">⚠️ ปีของวันปิดภาคเรียนที่ 2 มักจะเป็นปีถัดไป (เช่น เปิดเทอม พ.ย. 2569 ปิดเทอม มี.ค. 2570)</p>
+          <button class="btn btn-p" id="btnCalendar" onclick="saveSchoolInfo()">💾 บันทึกปฏิทิน</button>
+          <button class="btn btn-s" onclick="showCalendarSummary()">📊 ดูสรุปวันเรียน</button>
+          <div class="calc-box" id="calendarSummary"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🚫 วันหยุดราชการ / วันเรียนชดเชย</div>
+          <p class="hint">รายการนี้เป็นค่าเริ่มต้น (โดยประมาณ) กรุณาตรวจสอบวันที่จริงกับปฏิทินราชการ/ปฏิทินจันทรคติก่อนใช้งาน โดยเฉพาะวันหยุดที่อิงวันพระ (วันวิสาขบูชา, วันมาฆบูชา ฯลฯ)</p>
+          <button class="btn btn-s btn-sm" onclick="seedDefaultHolidays()">➕ เพิ่มวันหยุดเริ่มต้น (2569–2570)</button>
+          <div class="sub-title">เพิ่มวันหยุด/วันชดเชยเอง</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">วันที่</label><input class="fi" id="hoDate" type="date"></div>
+            <div class="fg"><label class="fl">ชื่อวันหยุด</label><input class="fi" id="hoName"></div>
+            <div class="fg"><label class="fl">ประเภท</label><select class="fi" id="hoKind"><option>หยุด</option><option>ชดเชย</option></select></div>
+          </div>
+          <button class="btn btn-p btn-sm" id="btnHoliday" onclick="addHoliday()">➕ เพิ่ม</button>
+          <div class="tw" style="margin-top:14px"><table>
+            <thead><tr><th>วันที่</th><th>ชื่อวันหยุด</th><th>ประเภท</th><th>จัดการ</th></tr></thead>
+            <tbody id="listHoliday"><tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">👥 รายชื่อครูกลาง</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชื่อ-สกุล</label><input class="fi" id="teName"></div>
+            <div class="fg"><label class="fl">ตำแหน่ง</label><input class="fi" id="teRole" placeholder="เช่น ครูประจำชั้น"></div>
+          </div>
+          <button class="btn btn-p btn-sm" id="btnTeacher" onclick="addTeacher()">➕ เพิ่มครู</button>
+          <div class="tw" style="margin-top:14px"><table>
+            <thead><tr><th>ชื่อ-สกุล</th><th>ตำแหน่ง</th><th>จัดการ</th></tr></thead>
+            <tbody id="listTeacher"><tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📏 เกณฑ์การตัดสินผลการเรียน</div>
+          <div class="chk-row"><input type="checkbox" id="ssGradeFromT1"><label for="ssGradeFromT1">แสดงเกรดตั้งแต่ภาคเรียนที่ 1 (ระดับประถมศึกษา)</label></div>
+          <button class="btn btn-p btn-sm" onclick="saveSchoolInfo()">💾 บันทึกเกณฑ์</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🏛️ จัดการชั้นเรียน</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชื่อชั้น</label><input class="fi" id="clName" placeholder="เช่น ป.6/1"></div>
+            <div class="fg"><label class="fl">ครูประจำชั้น</label><input class="fi" id="clHomeroom"></div>
+          </div>
+          <button class="btn btn-p btn-sm" id="btnClass" onclick="addClass()">➕ เพิ่มชั้นเรียน</button>
+          <div class="tw" style="margin-top:14px"><table>
+            <thead><tr><th>ชื่อชั้น</th><th>ครูประจำชั้น</th><th>จัดการ</th></tr></thead>
+            <tbody id="listClass"><tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">☁️ การซิงค์ข้อมูลคลาวด์</div>
+          <p class="hint">ระบบนี้บันทึกข้อมูลลง Google Sheets โดยตรงอยู่แล้ว จึงเทียบเท่าโหมดคลาวด์ตลอดเวลา (ไม่มีโหมดออฟไลน์แยกต่างหาก) จัดการ URL การเชื่อมต่อได้ที่หน้า "ตั้งค่าการเชื่อมต่อ"</p>
+          <button class="btn btn-s btn-sm" onclick="nav('settings')">⚙️ ไปหน้าตั้งค่าการเชื่อมต่อ</button>
+        </div>
+      </div>
+
       <div class="page" id="page-settings">
         <div class="card">
           <div class="card-title">⚙️ ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</div>
@@ -253,7 +380,11 @@ var studentCache = [];
 var subjectCache = [];
 var scoreCache = [];
 var attendanceCache = [];
-var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',schoolsettings:'ตั้งค่าโรงเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var currentLogo = '';
+var teacherCache = [];
+var classCache = [];
+var holidayCache = [];
 
 function updateDashboard(){
   const total=studentCache.length;
@@ -286,7 +417,7 @@ async function checkSetup(){
   document.getElementById('connDot').classList.toggle('on',!!u);
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
   if(u){
-    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance()]);
+    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance(),loadSchoolSettings(),loadTeachers(),loadClasses(),loadHolidays()]);
     updateDashboard();
   }
   else nav('settings');
@@ -312,7 +443,7 @@ async function postData(payload,btnId,okMsg){
   try{
     const res=await fetch(url,{method:'POST',body:JSON.stringify(payload)});
     const j=await res.json();
-    if(j.status==='ok'){toast(okMsg);ok=true;}
+    if(j.status==='ok'){if(okMsg)toast(okMsg);ok=true;}
     else toast('บันทึกไม่สำเร็จ: '+(j.message||''),'err');
   }catch(err){
     toast('เชื่อมต่อไม่สำเร็จ ตรวจสอบ URL','err');
@@ -460,6 +591,183 @@ async function loadAttendance(){
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
   }
   updateDashboard();
+}
+
+// ── ตั้งค่าโรงเรียน ──
+function onLogoPick(input){
+  const f=input.files[0];
+  if(!f)return;
+  if(f.size>1500000){toast('ไฟล์รูปใหญ่เกินไป (จำกัด ~1.5MB)','err');return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    currentLogo=ev.target.result;
+    document.getElementById('ssLogoPreview').innerHTML=`<img src="${currentLogo}">`;
+  };
+  reader.readAsDataURL(f);
+}
+function clearLogo(){
+  currentLogo='';
+  document.getElementById('ssLogoPreview').innerHTML='🏫';
+}
+function collectSettings(){
+  return {
+    schoolName:document.getElementById('ssSchoolName').value.trim(),
+    affiliation:document.getElementById('ssAffiliation').value.trim(),
+    tambon:document.getElementById('ssTambon').value.trim(),
+    amphoe:document.getElementById('ssAmphoe').value.trim(),
+    changwat:document.getElementById('ssChangwat').value.trim(),
+    logo:currentLogo,
+    directorName:document.getElementById('ssDirName').value.trim(),
+    directorTitle:document.getElementById('ssDirTitle').value.trim(),
+    signers:[1,2,3,4].map(i=>({name:document.getElementById('ssSigner'+i+'Name').value.trim(),title:document.getElementById('ssSigner'+i+'Title').value.trim()})),
+    showSignersPp5:document.getElementById('ssShowSignPp5').checked,
+    showSignersPp6:document.getElementById('ssShowSignPp6').checked,
+    term1Start:document.getElementById('ssT1Start').value,
+    term1End:document.getElementById('ssT1End').value,
+    term2Start:document.getElementById('ssT2Start').value,
+    term2End:document.getElementById('ssT2End').value,
+    gradeFromTerm1:document.getElementById('ssGradeFromT1').checked
+  };
+}
+function applySettings(s){
+  document.getElementById('ssSchoolName').value=s.schoolName||'';
+  document.getElementById('ssAffiliation').value=s.affiliation||'';
+  document.getElementById('ssTambon').value=s.tambon||'';
+  document.getElementById('ssAmphoe').value=s.amphoe||'';
+  document.getElementById('ssChangwat').value=s.changwat||'';
+  currentLogo=s.logo||'';
+  document.getElementById('ssLogoPreview').innerHTML=currentLogo?`<img src="${currentLogo}">`:'🏫';
+  document.getElementById('ssDirName').value=s.directorName||'';
+  document.getElementById('ssDirTitle').value=s.directorTitle||'ผู้อำนวยการโรงเรียน';
+  const signers=s.signers||[];
+  [1,2,3,4].forEach(i=>{
+    const sgn=signers[i-1]||{};
+    document.getElementById('ssSigner'+i+'Name').value=sgn.name||'';
+    document.getElementById('ssSigner'+i+'Title').value=sgn.title||'';
+  });
+  document.getElementById('ssShowSignPp5').checked=!!s.showSignersPp5;
+  document.getElementById('ssShowSignPp6').checked=!!s.showSignersPp6;
+  document.getElementById('ssT1Start').value=s.term1Start||'';
+  document.getElementById('ssT1End').value=s.term1End||'';
+  document.getElementById('ssT2Start').value=s.term2Start||'';
+  document.getElementById('ssT2End').value=s.term2End||'';
+  document.getElementById('ssGradeFromT1').checked=!!s.gradeFromTerm1;
+}
+async function saveSchoolInfo(){
+  if(await postData({type:'settings',settings:collectSettings()},null,'บันทึกการตั้งค่าแล้ว ✅')){}
+}
+async function loadSchoolSettings(){
+  const url=getUrl();
+  if(!url)return;
+  try{
+    const res=await fetch(url+'?type=settings');
+    const s=await res.json();
+    applySettings(s||{});
+  }catch(err){}
+}
+function showCalendarSummary(){
+  const ranges=[[document.getElementById('ssT1Start').value,document.getElementById('ssT1End').value],
+                [document.getElementById('ssT2Start').value,document.getElementById('ssT2End').value]];
+  const holSet=new Set(holidayCache.map(r=>r[1]));
+  let html='';
+  ranges.forEach((r,idx)=>{
+    if(!r[0]||!r[1]){html+=`<div>ภาคเรียนที่ ${idx+1}: ยังไม่ได้กรอกวันที่</div>`;return;}
+    const start=new Date(r[0]), end=new Date(r[1]);
+    let schoolDays=0,total=0;
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      total++;
+      const dow=d.getDay();
+      const iso=d.toISOString().slice(0,10);
+      if(dow!==0&&dow!==6&&!holSet.has(iso))schoolDays++;
+    }
+    html+=`<div>ภาคเรียนที่ ${idx+1}: ${total} วัน (ประมาณ ${schoolDays} วันเรียน หลังหักเสาร์-อาทิตย์และวันหยุดที่บันทึกไว้)</div>`;
+  });
+  const box=document.getElementById('calendarSummary');
+  box.innerHTML=html;
+  box.classList.add('show');
+}
+async function seedDefaultHolidays(){
+  const defaults=[
+    ['2569-01-01','วันขึ้นปีใหม่'],['2569-04-13','วันสงกรานต์'],['2569-04-14','วันสงกรานต์'],['2569-04-15','วันสงกรานต์'],
+    ['2569-05-01','วันแรงงานแห่งชาติ'],['2569-05-04','วันฉัตรมงคล'],['2569-07-28','วันเฉลิมพระชนมพรรษา ร.10'],
+    ['2569-08-12','วันแม่แห่งชาติ'],['2569-10-13','วันคล้ายวันสวรรคต ร.9'],['2569-10-23','วันปิยมหาราช'],
+    ['2569-12-05','วันพ่อแห่งชาติ'],['2569-12-10','วันรัฐธรรมนูญ'],['2569-12-31','วันสิ้นปี']
+  ];
+  toast('กำลังเพิ่มวันหยุดเริ่มต้น...');
+  for(const [date,name] of defaults){
+    await postData({type:'holiday',date,name,kind:'หยุด'},null,'');
+  }
+  toast('เพิ่มวันหยุดเริ่มต้นแล้ว ✅');
+  loadHolidays();
+}
+async function addHoliday(){
+  const date=document.getElementById('hoDate').value;
+  const name=document.getElementById('hoName').value.trim();
+  if(!date||!name){toast('กรุณากรอกวันที่และชื่อวันหยุด','err');return;}
+  const kind=document.getElementById('hoKind').value;
+  if(await postData({type:'holiday',date,name,kind},'btnHoliday','เพิ่มวันหยุดแล้ว ✅')){
+    document.getElementById('hoDate').value='';document.getElementById('hoName').value='';
+    loadHolidays();
+  }
+}
+async function delHoliday(id){
+  if(await postData({type:'holiday_del',id},null,'ลบแล้ว')) loadHolidays();
+}
+async function loadHolidays(){
+  const rows=await fetchType('holiday');
+  const list=rows.slice(1);
+  holidayCache=list;
+  const tbody=document.getElementById('listHoliday');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.slice().sort((a,b)=>String(a[1]).localeCompare(String(b[1]))).map(r=>
+      `<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td><button class="btn btn-d btn-xs" onclick="delHoliday('${r[0]}')">🗑️</button></td></tr>`
+    ).join('');
+  }
+}
+async function addTeacher(){
+  const name=document.getElementById('teName').value.trim();
+  if(!name){toast('กรุณากรอกชื่อครู','err');return;}
+  const role=document.getElementById('teRole').value.trim();
+  if(await postData({type:'teacher',name,role},'btnTeacher','เพิ่มครูแล้ว ✅')){
+    document.getElementById('teName').value='';document.getElementById('teRole').value='';
+    loadTeachers();
+  }
+}
+async function delTeacher(id){
+  if(await postData({type:'teacher_del',id},null,'ลบแล้ว')) loadTeachers();
+}
+async function loadTeachers(){
+  const rows=await fetchType('teacher');
+  const list=rows.slice(1);
+  teacherCache=list;
+  const tbody=document.getElementById('listTeacher');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td><button class="btn btn-d btn-xs" onclick="delTeacher('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
+}
+async function addClass(){
+  const name=document.getElementById('clName').value.trim();
+  if(!name){toast('กรุณากรอกชื่อชั้น','err');return;}
+  const homeroom=document.getElementById('clHomeroom').value.trim();
+  if(await postData({type:'class',name,homeroom},'btnClass','เพิ่มชั้นเรียนแล้ว ✅')){
+    document.getElementById('clName').value='';document.getElementById('clHomeroom').value='';
+    loadClasses();
+  }
+}
+async function delClass(id){
+  if(await postData({type:'class_del',id},null,'ลบแล้ว')) loadClasses();
+}
+async function loadClasses(){
+  const rows=await fetchType('class');
+  const list=rows.slice(1);
+  classCache=list;
+  const tbody=document.getElementById('listClass');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td><button class="btn btn-d btn-xs" onclick="delClass('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
 }
 
 checkSetup();
