@@ -176,6 +176,7 @@ tr:last-child td{border-bottom:none}
           <div class="frow">
             <div class="fg"><label class="fl">รหัสวิชา</label><input class="fi" id="sCode" placeholder="เช่น ท16101"></div>
             <div class="fg"><label class="fl">ชื่อวิชา</label><input class="fi" id="sName" placeholder="เช่น ภาษาไทย"></div>
+            <div class="fg"><label class="fl">ระดับชั้น</label><input class="fi" id="sGrade" placeholder="เช่น ป.6"></div>
           </div>
           <div class="frow">
             <div class="fg"><label class="fl">เก็บคะแนนเต็ม</label><input class="fi" id="sFullFormative" type="number" value="70"></div>
@@ -185,12 +186,19 @@ tr:last-child td{border-bottom:none}
           <button class="btn btn-p" id="btnSubject" onclick="submitSubject()">💾 บันทึกรายวิชา</button>
         </div>
         <div class="card">
+          <div class="card-title">📥 นำเข้าหลายวิชาจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: รหัสวิชา, ชื่อวิชา, ระดับชั้น (ถ้าไม่ระบุคะแนนเต็มแต่ละส่วน ระบบจะใช้ค่าเริ่มต้น เก็บคะแนน 70 / กลางภาค 15 / ปลายภาค 15 ให้)</p>
+          <button class="btn btn-s btn-sm" onclick="downloadSubjectTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('sjCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="sjCsvFile" accept=".csv" style="display:none" onchange="importSubjectsCSV(this)">
+        </div>
+        <div class="card">
           <div class="card-title" style="display:flex;justify-content:space-between">
             <span>📄 รายวิชาที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadSubjects()">🔄 โหลดใหม่</button>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>เก็บคะแนน</th><th>กลางภาค</th><th>ปลายภาค</th><th>เต็ม</th></tr></thead>
-            <tbody id="listSubject"><tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+            <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>ระดับชั้น</th><th>เก็บคะแนน</th><th>กลางภาค</th><th>ปลายภาค</th><th>เต็ม</th></tr></thead>
+            <tbody id="listSubject"><tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -574,11 +582,12 @@ async function submitSubject(){
   const data={type:'subject',
     code:document.getElementById('sCode').value.trim(),
     name:name,
+    grade:document.getElementById('sGrade').value.trim(),
     fullFormative:document.getElementById('sFullFormative').value,
     fullMid:document.getElementById('sFullMid').value,
     fullFinal:document.getElementById('sFullFinal').value};
   if(await postData(data,'btnSubject','บันทึกรายวิชาแล้ว ✅')){
-    document.getElementById('sCode').value='';document.getElementById('sName').value='';
+    document.getElementById('sCode').value='';document.getElementById('sName').value='';document.getElementById('sGrade').value='';
     loadSubjects();
   }
 }
@@ -588,12 +597,12 @@ async function loadSubjects(){
   subjectCache=list;
   const tbody=document.getElementById('listSubject');
   subjectFullMap={};
-  if(list.length===0){tbody.innerHTML='<tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
   else{
     tbody.innerHTML=list.map(r=>{
-      const full=(Number(r[2])||0)+(Number(r[3])||0)+(Number(r[4])||0);
+      const full=(Number(r[3])||0)+(Number(r[4])||0)+(Number(r[5])||0);
       subjectFullMap[r[0]]=full;
-      return `<tr><td>${r[0]??''}</td><td>${r[1]??''}</td><td class="tc">${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${full}</td></tr>`;
+      return `<tr><td>${r[0]??''}</td><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${full}</td></tr>`;
     }).join('');
   }
   const opts='<option value="">— เลือกวิชา —</option>'+list.map(r=>`<option value="${r[0]}" data-name="${r[1]}">${r[1]} (${r[0]})</option>`).join('');
@@ -917,6 +926,29 @@ async function importAttendanceCSV(input){
       leave:row['ลา']||0,
       late:row['สาย']||0};
   },loadAttendance);
+  input.value='';
+}
+
+// ── นำเข้า/ตัวอย่างไฟล์: รายวิชา ──
+function downloadSubjectTemplate(){
+  downloadCSV('ตัวอย่างรายวิชา.csv',
+    ['รหัสวิชา','ชื่อวิชา','ระดับชั้น'],
+    [{'รหัสวิชา':'ท16101','ชื่อวิชา':'ภาษาไทย','ระดับชั้น':'ป.6'},
+     {'รหัสวิชา':'ค16101','ชื่อวิชา':'คณิตศาสตร์','ระดับชั้น':'ป.6'}]);
+}
+async function importSubjectsCSV(input){
+  const file=input.files[0];
+  await bulkImport(file,(row)=>{
+    const name=row['ชื่อวิชา'];
+    if(!name)return null;
+    return {type:'subject',
+      code:row['รหัสวิชา']||'',
+      name:name,
+      grade:row['ระดับชั้น']||'',
+      fullFormative:row['เก็บคะแนนเต็ม']||70,
+      fullMid:row['กลางภาคเต็ม']||15,
+      fullFinal:row['ปลายภาคเต็ม']||15};
+  },loadSubjects);
   input.value='';
 }
 

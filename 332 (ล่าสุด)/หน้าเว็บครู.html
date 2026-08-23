@@ -333,7 +333,7 @@ async function loadSubjectOptions(){
   const list=rows.slice(1);
   subjectCache=list;
   subjectFullMap={};
-  list.forEach(r=>{subjectFullMap[r[0]]=(Number(r[2])||0)+(Number(r[3])||0)+(Number(r[4])||0);});
+  list.forEach(r=>{subjectFullMap[r[0]]=(Number(r[3])||0)+(Number(r[4])||0)+(Number(r[5])||0);});
   const opts='<option value="">— เลือกวิชา —</option>'+list.map(r=>`<option value="${r[0]}" data-name="${r[1]}">${r[1]} (${r[0]})</option>`).join('');
   document.getElementById('scSubject').innerHTML=opts;
 }
