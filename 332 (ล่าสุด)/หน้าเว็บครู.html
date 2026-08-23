@@ -79,6 +79,11 @@ tr:last-child td{border-bottom:none}
 .login-title{font-size:16px;font-weight:700;font-family:var(--serif);margin-bottom:4px}
 .login-sub{font-size:12.5px;color:var(--text3);margin-bottom:20px}
 .login-err{font-size:12.5px;color:var(--red);margin-top:10px;min-height:16px}
+.suggest-box{display:none;position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--sh2);max-height:220px;overflow-y:auto;z-index:20;margin-top:2px}
+.suggest-box.show{display:block}
+.suggest-item{padding:8px 12px;font-size:13.5px;cursor:pointer;text-align:left}
+.suggest-item:hover{background:var(--surface2)}
+.suggest-empty{padding:8px 12px;font-size:12.5px;color:var(--text3);text-align:left}
 .btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:11px;color:var(--text3);margin-left:auto}
 .btn-logout:hover{background:var(--red-light);color:var(--red);border-color:var(--red)}
 </style>
@@ -89,10 +94,10 @@ tr:last-child td{border-bottom:none}
     <div class="login-logo">🔒</div>
     <div class="login-title">เข้าสู่ระบบ</div>
     <div class="login-sub">ปพ.5 · รร.เซนต์เทเรซา — ครู</div>
-    <div class="fg" style="text-align:left">
+    <div class="fg" style="text-align:left;position:relative">
       <label class="fl">ชื่อผู้ใช้ / User ID</label>
-      <input class="fi" id="loginUser" list="loginUserList" autocomplete="off" placeholder="พิมพ์ชื่อ-สกุล หรือ User ID" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
-      <datalist id="loginUserList"></datalist>
+      <input class="fi" id="loginUser" autocomplete="off" placeholder="พิมพ์ชื่อ-สกุล หรือ User ID" oninput="filterUserSuggestions()" onfocus="filterUserSuggestions()" onkeydown="if(event.key==='Enter'){hideUserSuggestions();document.getElementById('loginPin').focus();}">
+      <div id="loginUserSuggest" class="suggest-box"></div>
     </div>
     <div class="fg" style="text-align:left">
       <label class="fl">รหัสผ่าน</label>
@@ -259,15 +264,39 @@ function initLoginGate(){
   }
   loadUsernameList();
 }
+var usernameCache=[];
 async function loadUsernameList(){
   try{
     const res=await fetch(DEFAULT_WEB_APP_URL+'?type=usernames');
     const rows=await res.json();
-    if(!Array.isArray(rows))return;
-    document.getElementById('loginUserList').innerHTML=
-      rows.map(r=>`<option value="${(r[1]||'').replace(/"/g,'&quot;')}">`).join('');
+    if(Array.isArray(rows))usernameCache=rows;
   }catch(err){}
 }
+function escHtml_(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function filterUserSuggestions(){
+  const val=document.getElementById('loginUser').value.trim();
+  const box=document.getElementById('loginUserSuggest');
+  if(!val){box.classList.remove('show');box.innerHTML='';return;}
+  const matches=usernameCache.filter(r=>(r[1]||'').includes(val)||(r[0]||'').includes(val)).slice(0,8);
+  if(!matches.length){
+    box.innerHTML='<div class="suggest-empty">ไม่พบรายชื่อที่ตรงกัน</div>';
+    box.classList.add('show');
+    return;
+  }
+  box.innerHTML=matches.map(r=>`<div class="suggest-item" onmousedown="pickUser('${escHtml_(r[1]).replace(/'/g,"\\'")}')">${escHtml_(r[1])}</div>`).join('');
+  box.classList.add('show');
+}
+function pickUser(name){
+  document.getElementById('loginUser').value=name;
+  hideUserSuggestions();
+  document.getElementById('loginPin').focus();
+}
+function hideUserSuggestions(){
+  document.getElementById('loginUserSuggest').classList.remove('show');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#loginUser')&&!e.target.closest('#loginUserSuggest'))hideUserSuggestions();
+});
 
 var subjectFullMap = {};
 var studentCache = [];
