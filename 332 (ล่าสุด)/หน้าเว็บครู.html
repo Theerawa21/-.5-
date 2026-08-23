@@ -249,7 +249,7 @@ async function tryLogin(){
       errEl.textContent=j.message||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
   }catch(err){
-    errEl.textContent='เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง';
+    errEl.textContent='เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง ('+(err.message||err)+')';
   }
   btn.disabled=false;btn.textContent='🔑 เข้าสู่ระบบ';
 }
