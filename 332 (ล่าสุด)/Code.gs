@@ -186,7 +186,12 @@ function doPost(e) {
   } else if (type === 'settings') {
     saveSettings_(data.settings || {});
   } else if (type === 'logo_upload') {
-    var result = uploadLogo_(data.dataUrl, data.oldFileId);
+    var result;
+    try {
+      result = uploadLogo_(data.dataUrl, data.oldFileId);
+    } catch (err) {
+      result = { status: 'error', message: String(err && err.message ? err.message : err) };
+    }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
   } else if (type === 'user') {
