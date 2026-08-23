@@ -158,6 +158,13 @@ tr:last-child td{border-bottom:none}
           <button class="btn btn-p" id="btnStudent" onclick="submitStudent()">💾 บันทึกนักเรียน</button>
         </div>
         <div class="card">
+          <div class="card-title">📥 นำเข้าหลายคนจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: เลขที่, คำนำหน้า, ชื่อ, นามสกุล, เพศ, ชั้น, ห้อง, รหัสนักเรียน, เลขประจำตัวประชาชน, วันเกิด — ดาวน์โหลดไฟล์ตัวอย่างเพื่อดูรูปแบบ</p>
+          <button class="btn btn-s btn-sm" onclick="downloadStudentTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('stCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="stCsvFile" accept=".csv" style="display:none" onchange="importStudentsCSV(this)">
+        </div>
+        <div class="card">
           <div class="card-title" style="display:flex;justify-content:space-between">
             <span>📄 รายชื่อที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadStudents()">🔄 โหลดใหม่</button>
           </div>
@@ -208,6 +215,13 @@ tr:last-child td{border-bottom:none}
           <button class="btn btn-p" id="btnScore" onclick="submitScore()">💾 บันทึกคะแนน</button>
         </div>
         <div class="card">
+          <div class="card-title">📥 นำเข้าคะแนนหลายคนจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: รหัสนักเรียน, รหัสวิชา, เก็บคะแนน, กลางภาค, ปลายภาค — ระบบจะดึงชื่อนักเรียน/ชื่อวิชาและคำนวณรวม+เกรดให้อัตโนมัติ (ต้องมีนักเรียนและรายวิชาบันทึกไว้ก่อน)</p>
+          <button class="btn btn-s btn-sm" onclick="downloadScoreTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('scCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="scCsvFile" accept=".csv" style="display:none" onchange="importScoresCSV(this)">
+        </div>
+        <div class="card">
           <div class="card-title" style="display:flex;justify-content:space-between">
             <span>📄 คะแนนที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadScores()">🔄 โหลดใหม่</button>
           </div>
@@ -232,6 +246,13 @@ tr:last-child td{border-bottom:none}
             <div class="fg"><label class="fl">สาย (ครั้ง)</label><input class="fi" id="atLate" type="number"></div>
           </div>
           <button class="btn btn-p" id="btnAttendance" onclick="submitAttendance()">💾 บันทึกเวลาเรียน</button>
+        </div>
+        <div class="card">
+          <div class="card-title">📥 นำเข้าเวลาเรียนหลายคนจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: รหัสนักเรียน, ภาคเรียน, มาเรียน, ขาด, ลา, สาย</p>
+          <button class="btn btn-s btn-sm" onclick="downloadAttendanceTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('atCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="atCsvFile" accept=".csv" style="display:none" onchange="importAttendanceCSV(this)">
         </div>
         <div class="card">
           <div class="card-title" style="display:flex;justify-content:space-between">
@@ -459,6 +480,63 @@ async function fetchType(type){
     const rows=await res.json();
     return Array.isArray(rows)?rows:[];
   }catch(err){return [];}
+}
+
+// ── นำเข้า/ส่งออกไฟล์ CSV ──
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');
+  const lines=text.split(/\r\n|\n|\r/).filter(l=>l.trim().length);
+  if(!lines.length)return [];
+  const parseLine=(line)=>{
+    const out=[];let cur='';let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(inQ){
+        if(c==='"'){if(line[i+1]==='"'){cur+='"';i++;}else inQ=false;}
+        else cur+=c;
+      }else{
+        if(c==='"')inQ=true;
+        else if(c===','){out.push(cur);cur='';}
+        else cur+=c;
+      }
+    }
+    out.push(cur);
+    return out.map(s=>s.trim());
+  };
+  const headers=parseLine(lines[0]);
+  return lines.slice(1).map(line=>{
+    const cells=parseLine(line);
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=cells[i]!==undefined?cells[i]:'');
+    return obj;
+  });
+}
+function downloadCSV(filename,headers,rows){
+  const esc=(v)=>{v=(v===undefined||v===null)?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const lines=[headers.map(esc).join(',')].concat(rows.map(r=>headers.map(h=>esc(r[h])).join(',')));
+  const csv='﻿'+lines.join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+async function bulkImport(file,mapFn,reloadFn){
+  if(!file)return;
+  const text=await file.text();
+  const rows=parseCSV(text);
+  if(!rows.length){toast('ไฟล์ว่างเปล่าหรืออ่านไม่ได้','err');return;}
+  toast(`กำลังนำเข้า ${rows.length} แถว...`);
+  let ok=0,fail=0;
+  for(const row of rows){
+    const payload=mapFn(row);
+    if(!payload){fail++;continue;}
+    const success=await postData(payload,null,'');
+    if(success)ok++;else fail++;
+  }
+  toast(`นำเข้าสำเร็จ ${ok} แถว${fail?` (ข้าม/ล้มเหลว ${fail} แถว)`:''} ✅`);
+  if(reloadFn)await reloadFn();
 }
 
 document.getElementById('btnStudent').dataset.label='💾 บันทึกนักเรียน';
@@ -768,6 +846,90 @@ async function loadClasses(){
   else{
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td><button class="btn btn-d btn-xs" onclick="delClass('${r[0]}')">🗑️</button></td></tr>`).join('');
   }
+}
+
+// ── นำเข้า/ตัวอย่างไฟล์: นักเรียน ──
+function downloadStudentTemplate(){
+  downloadCSV('ตัวอย่างนักเรียน.csv',
+    ['เลขที่','คำนำหน้า','ชื่อ','นามสกุล','เพศ','ชั้น','ห้อง','รหัสนักเรียน','เลขประจำตัวประชาชน','วันเกิด'],
+    [{'เลขที่':1,'คำนำหน้า':'เด็กชาย','ชื่อ':'สมชาย','นามสกุล':'ใจดี','เพศ':'ชาย','ชั้น':'ป.6','ห้อง':'1','รหัสนักเรียน':'12345','เลขประจำตัวประชาชน':'1234567890123','วันเกิด':'2015-05-20'},
+     {'เลขที่':2,'คำนำหน้า':'เด็กหญิง','ชื่อ':'สมหญิง','นามสกุล':'รักเรียน','เพศ':'หญิง','ชั้น':'ป.6','ห้อง':'1','รหัสนักเรียน':'12346','เลขประจำตัวประชาชน':'1234567890124','วันเกิด':'2015-08-02'}]);
+}
+async function importStudentsCSV(input){
+  const file=input.files[0];
+  await bulkImport(file,(row)=>{
+    const fname=row['ชื่อ'];
+    if(!fname)return null;
+    return {type:'student',
+      no:row['เลขที่']||'',
+      prefix:row['คำนำหน้า']||'เด็กชาย',
+      fname:fname,
+      lname:row['นามสกุล']||'',
+      gender:row['เพศ']||(['เด็กชาย','นาย'].includes(row['คำนำหน้า'])?'ชาย':'หญิง'),
+      grade:row['ชั้น']||'',
+      room:row['ห้อง']||'',
+      sid:row['รหัสนักเรียน']||'',
+      cid:row['เลขประจำตัวประชาชน']||'',
+      bday:row['วันเกิด']||''};
+  },loadStudents);
+  input.value='';
+}
+
+// ── นำเข้า/ตัวอย่างไฟล์: คะแนน ──
+function downloadScoreTemplate(){
+  downloadCSV('ตัวอย่างคะแนน.csv',
+    ['รหัสนักเรียน','รหัสวิชา','เก็บคะแนน','กลางภาค','ปลายภาค'],
+    [{'รหัสนักเรียน':'12345','รหัสวิชา':'ท16101','เก็บคะแนน':65,'กลางภาค':15,'ปลายภาค':14},
+     {'รหัสนักเรียน':'12346','รหัสวิชา':'ท16101','เก็บคะแนน':68,'กลางภาค':14,'ปลายภาค':15}]);
+}
+async function importScoresCSV(input){
+  const file=input.files[0];
+  if(studentCache.length===0||subjectCache.length===0){toast('กรุณาโหลดข้อมูลนักเรียนและรายวิชาให้ครบก่อนนำเข้าคะแนน','err');input.value='';return;}
+  await bulkImport(file,(row)=>{
+    const sid=row['รหัสนักเรียน'];
+    const code=row['รหัสวิชา'];
+    if(!sid||!code)return null;
+    const student=studentCache.find(r=>r[5]===sid);
+    const subject=subjectCache.find(r=>r[0]===code);
+    if(!student||!subject)return null;
+    return {type:'score',
+      sid:sid,
+      studentName:(student[2]||'')+' '+(student[3]||''),
+      subjectCode:code,
+      subjectName:subject[1]||'',
+      formative:row['เก็บคะแนน']||0,
+      mid:row['กลางภาค']||0,
+      fin:row['ปลายภาค']||0,
+      fullTotal:subjectFullMap[code]||100};
+  },loadScores);
+  input.value='';
+}
+
+// ── นำเข้า/ตัวอย่างไฟล์: เวลาเรียน ──
+function downloadAttendanceTemplate(){
+  downloadCSV('ตัวอย่างเวลาเรียน.csv',
+    ['รหัสนักเรียน','ภาคเรียน','มาเรียน','ขาด','ลา','สาย'],
+    [{'รหัสนักเรียน':'12345','ภาคเรียน':'1/2569','มาเรียน':90,'ขาด':2,'ลา':1,'สาย':0},
+     {'รหัสนักเรียน':'12346','ภาคเรียน':'1/2569','มาเรียน':92,'ขาด':0,'ลา':1,'สาย':1}]);
+}
+async function importAttendanceCSV(input){
+  const file=input.files[0];
+  if(studentCache.length===0){toast('กรุณาโหลดข้อมูลนักเรียนให้ครบก่อนนำเข้าเวลาเรียน','err');input.value='';return;}
+  await bulkImport(file,(row)=>{
+    const sid=row['รหัสนักเรียน'];
+    if(!sid)return null;
+    const student=studentCache.find(r=>r[5]===sid);
+    if(!student)return null;
+    return {type:'attendance',
+      sid:sid,
+      studentName:(student[2]||'')+' '+(student[3]||''),
+      term:row['ภาคเรียน']||'',
+      present:row['มาเรียน']||0,
+      absent:row['ขาด']||0,
+      leave:row['ลา']||0,
+      late:row['สาย']||0};
+  },loadAttendance);
+  input.value='';
 }
 
 checkSetup();
