@@ -316,7 +316,7 @@ function nav(p){
   document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('active',pg.id==='page-'+p));
   document.getElementById('pgTitle').textContent=PAGE_TITLES[p];
 }
-var DEFAULT_WEB_APP_URL='https://script.google.com/macros/s/AKfycbwuJvdoJO5BmrIbrG1_3P35YNxTfbYzeor26k6hdZEu2DLWIZ1OMRKOWZzQDuY3ZjkX/exec';
+var DEFAULT_WEB_APP_URL='https://script.google.com/macros/s/AKfycbw9kjZ4zFJP7d5-d_NLw4KksE6LU8f2HLzZxfyD8D_2Y8uQGmAHR9UsXkPpnsopOZn3/exec';
 function getUrl(){return localStorage.getItem('sf_url')||DEFAULT_WEB_APP_URL;}
 function saveUrl(){
   const u=document.getElementById('scriptUrl').value.trim();
