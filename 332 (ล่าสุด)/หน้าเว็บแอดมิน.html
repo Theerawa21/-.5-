@@ -307,10 +307,16 @@ tr:last-child td{border-bottom:none}
             <div class="fg"><label class="fl">ชื่อโรงเรียน</label><input class="fi" id="ssSchoolName"></div>
             <div class="fg"><label class="fl">สังกัด</label><input class="fi" id="ssAffiliation"></div>
           </div>
+          <div class="fg"><label class="fl">ที่อยู่ (บ้านเลขที่/หมู่/ถนน)</label><input class="fi" id="ssAddress" placeholder="เช่น เลขที่ 63 หมู่ 4 ถนนสังฆสันติสุข"></div>
           <div class="frow">
-            <div class="fg"><label class="fl">ตำบล</label><input class="fi" id="ssTambon"></div>
-            <div class="fg"><label class="fl">อำเภอ</label><input class="fi" id="ssAmphoe"></div>
+            <div class="fg"><label class="fl">ตำบล/แขวง</label><input class="fi" id="ssTambon"></div>
+            <div class="fg"><label class="fl">อำเภอ/เขต</label><input class="fi" id="ssAmphoe"></div>
             <div class="fg"><label class="fl">จังหวัด</label><input class="fi" id="ssChangwat"></div>
+            <div class="fg"><label class="fl">รหัสไปรษณีย์</label><input class="fi" id="ssZipcode" maxlength="5"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">โทรศัพท์</label><input class="fi" id="ssPhone"></div>
+            <div class="fg"><label class="fl">อีเมล</label><input class="fi" id="ssEmail" type="email"></div>
           </div>
           <div class="fg"><label class="fl">ตราโรงเรียน</label>
             <div class="logo-box">
@@ -869,9 +875,13 @@ function collectSettings(){
   return {
     schoolName:document.getElementById('ssSchoolName').value.trim(),
     affiliation:document.getElementById('ssAffiliation').value.trim(),
+    address:document.getElementById('ssAddress').value.trim(),
     tambon:document.getElementById('ssTambon').value.trim(),
     amphoe:document.getElementById('ssAmphoe').value.trim(),
     changwat:document.getElementById('ssChangwat').value.trim(),
+    zipcode:document.getElementById('ssZipcode').value.trim(),
+    phone:document.getElementById('ssPhone').value.trim(),
+    email:document.getElementById('ssEmail').value.trim(),
     logoUrl:currentLogo,
     logoFileId:currentLogoFileId,
     directorName:document.getElementById('ssDirName').value.trim(),
@@ -889,9 +899,13 @@ function collectSettings(){
 function applySettings(s){
   document.getElementById('ssSchoolName').value=s.schoolName||'';
   document.getElementById('ssAffiliation').value=s.affiliation||'';
+  document.getElementById('ssAddress').value=s.address||'';
   document.getElementById('ssTambon').value=s.tambon||'';
   document.getElementById('ssAmphoe').value=s.amphoe||'';
   document.getElementById('ssChangwat').value=s.changwat||'';
+  document.getElementById('ssZipcode').value=s.zipcode||'';
+  document.getElementById('ssPhone').value=s.phone||'';
+  document.getElementById('ssEmail').value=s.email||'';
   currentLogo=s.logoUrl||'';
   currentLogoFileId=s.logoFileId||'';
   document.getElementById('ssLogoPreview').innerHTML=currentLogo?`<img src="${currentLogo}">`:'🏫';
