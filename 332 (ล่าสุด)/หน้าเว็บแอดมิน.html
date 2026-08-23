@@ -379,6 +379,14 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <div class="card">
+          <div class="card-title">📥 นำเข้ารายชื่อครูจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: ชื่อ-สกุล, ตำแหน่ง</p>
+          <button class="btn btn-s btn-sm" onclick="downloadTeacherTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('teCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="teCsvFile" accept=".csv" style="display:none" onchange="importTeachersCSV(this)">
+        </div>
+
+        <div class="card">
           <div class="card-title">📏 เกณฑ์การตัดสินผลการเรียน</div>
           <div class="chk-row"><input type="checkbox" id="ssGradeFromT1"><label for="ssGradeFromT1">แสดงเกรดตั้งแต่ภาคเรียนที่ 1 (ระดับประถมศึกษา)</label></div>
           <button class="btn btn-p btn-sm" onclick="saveSchoolInfo()">💾 บันทึกเกณฑ์</button>
@@ -999,6 +1007,25 @@ async function importSubjectsCSV(input){
       fullMid:row['กลางภาคเต็ม']||15,
       fullFinal:row['ปลายภาคเต็ม']||15};
   },loadSubjects);
+  input.value='';
+}
+
+// ── นำเข้า/ตัวอย่างไฟล์: ครู ──
+function downloadTeacherTemplate(){
+  downloadCSV('ตัวอย่างครู.csv',
+    ['ชื่อ-สกุล','ตำแหน่ง'],
+    [{'ชื่อ-สกุล':'ครูสมศรี ใจงาม','ตำแหน่ง':'ครูประจำชั้น'},
+     {'ชื่อ-สกุล':'ครูสมชาย รักเรียน','ตำแหน่ง':'ครูผู้สอน'}]);
+}
+async function importTeachersCSV(input){
+  const file=input.files[0];
+  await bulkImport(file,(row)=>{
+    const name=row['ชื่อ-สกุล'];
+    if(!name)return null;
+    return {type:'teacher',
+      name:name,
+      role:row['ตำแหน่ง']||''};
+  },loadTeachers);
   input.value='';
 }
 
