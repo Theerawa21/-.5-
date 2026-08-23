@@ -98,6 +98,12 @@ function getSettings_() {
   try { return JSON.parse(v); } catch (err) { return {}; }
 }
 
+// ── ใช้ครั้งเดียวตอนติดตั้ง: เลือกฟังก์ชันนี้จาก dropdown ด้านบนแล้วกด ▶ Run เพื่อขอสิทธิ์ Google Drive ──
+// (ฟังก์ชันอื่นที่มีพารามิเตอร์ เช่น uploadLogo_ กดรันตรงๆ ไม่ได้ผล เพราะไม่มีค่าส่งเข้าไปจะ return ก่อนถึงจุดที่ต้องขอสิทธิ์)
+function requestDriveAccess_() {
+  DriveApp.getRootFolder();
+}
+
 // ── อัปโหลดโลโก้ไป Google Drive ──
 // เซลล์ของ Google Sheets จำกัดไว้ที่ 50,000 ตัวอักษร ซึ่งรูปภาพแปลงเป็น base64 มักเกินขนาดนี้เสมอ
 // จึงอัปโหลดไฟล์จริงไป Drive แล้วเก็บแค่ URL (สั้น) ไว้ในการตั้งค่าแทน
