@@ -376,6 +376,11 @@ tr:last-child td{border-bottom:none}
             <div class="fg"><label class="fl">ประเภท</label><select class="fi" id="hoKind"><option>หยุด</option><option>ชดเชย</option></select></div>
           </div>
           <button class="btn btn-p btn-sm" id="btnHoliday" onclick="addHoliday()">➕ เพิ่ม</button>
+          <div class="sub-title">นำเข้าหลายวันจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: วันที่ (YYYY-MM-DD), ชื่อวันหยุด, ประเภท (หยุด หรือ ชดเชย — ถ้าไม่ระบุจะถือเป็น "หยุด")</p>
+          <button class="btn btn-s btn-sm" onclick="downloadHolidayTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('hoCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="hoCsvFile" accept=".csv" style="display:none" onchange="importHolidaysCSV(this)">
           <div class="tw" style="margin-top:14px"><table>
             <thead><tr><th>วันที่</th><th>ชื่อวันหยุด</th><th>ประเภท</th><th>จัดการ</th></tr></thead>
             <tbody id="listHoliday"><tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
@@ -997,6 +1002,23 @@ async function loadHolidays(){
       `<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td><button class="btn btn-d btn-xs" onclick="delHoliday('${r[0]}')">🗑️</button></td></tr>`
     ).join('');
   }
+}
+function downloadHolidayTemplate(){
+  downloadCSV('ตัวอย่างวันหยุด.csv',
+    ['วันที่','ชื่อวันหยุด','ประเภท'],
+    [{'วันที่':'2569-01-01','ชื่อวันหยุด':'วันขึ้นปีใหม่','ประเภท':'หยุด'},
+     {'วันที่':'2569-08-15','ชื่อวันหยุด':'วันเรียนชดเชย','ประเภท':'ชดเชย'}]);
+}
+async function importHolidaysCSV(input){
+  const file=input.files[0];
+  await bulkImport(file,(row)=>{
+    const date=row['วันที่'];
+    const name=row['ชื่อวันหยุด'];
+    if(!date||!name)return null;
+    const kind=row['ประเภท']==='ชดเชย'?'ชดเชย':'หยุด';
+    return {type:'holiday',date,name,kind};
+  },loadHolidays);
+  input.value='';
 }
 async function addTeacher(){
   const name=document.getElementById('teName').value.trim();
