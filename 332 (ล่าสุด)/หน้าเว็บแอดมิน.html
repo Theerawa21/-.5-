@@ -134,6 +134,7 @@ tr:last-child td{border-bottom:none}
       <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
       <button class="ni" data-p="schoolsettings" onclick="nav('schoolsettings')"><span class="ni-icon">🏫</span><span>ตั้งค่าโรงเรียน</span></button>
+      <button class="ni" data-p="print" onclick="nav('print')"><span class="ni-icon">🖨️</span><span>พิมพ์เอกสาร ปพ.5</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
     </nav>
     <div class="sb-foot"><span class="dot" id="connDot"></span><span id="connText">ยังไม่ได้เชื่อมต่อ</span><button class="btn-logout" onclick="logout()">🚪 ออกจากระบบ</button></div>
@@ -467,6 +468,18 @@ tr:last-child td{border-bottom:none}
         </div>
       </div>
 
+      <div class="page" id="page-print">
+        <div class="card">
+          <div class="card-title">🖨️ พิมพ์เอกสาร ปพ.5 (ระเบียนแสดงผลการพัฒนาคุณภาพผู้เรียนรายวิชา)</div>
+          <p class="hint">เลือกนักเรียน แล้วกดสร้างเอกสาร — ระบบจะเปิดหน้าต่างใหม่พร้อมสั่งพิมพ์ให้อัตโนมัติ เลือก "บันทึกเป็น PDF" (Save as PDF) ในหน้าต่างพิมพ์ของเบราว์เซอร์เพื่อได้ไฟล์ PDF โดยไม่ต้องติดตั้งอะไรเพิ่ม</p>
+          <div class="frow">
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="pdfStudent"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">ภาคเรียน (สำหรับสรุปเวลาเรียน)</label><input class="fi" id="pdfTerm" placeholder="เว้นว่าง = แสดงทุกภาคเรียน"></div>
+          </div>
+          <button class="btn btn-p" onclick="generatePP5()">🖨️ สร้าง/พิมพ์เอกสาร</button>
+        </div>
+      </div>
+
       <div class="page" id="page-settings">
         <div class="card">
           <div class="card-title">⚙️ ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</div>
@@ -572,7 +585,7 @@ var studentCache = [];
 var subjectCache = [];
 var scoreCache = [];
 var attendanceCache = [];
-var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',schoolsettings:'ตั้งค่าโรงเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',schoolsettings:'ตั้งค่าโรงเรียน',print:'พิมพ์เอกสาร ปพ.5',settings:'ตั้งค่าการเชื่อมต่อ'};
 var currentLogo = '';
 var currentLogoFileId = '';
 var teacherCache = [];
@@ -742,6 +755,7 @@ async function loadStudents(){
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
+  document.getElementById('pdfStudent').innerHTML=opts;
   updateDashboard();
 }
 
@@ -1237,6 +1251,111 @@ async function importUsersCSV(input){
       password:password};
   },loadUsers);
   input.value='';
+}
+
+// ── พิมพ์เอกสาร ปพ.5 ──
+function generatePP5(){
+  const sel=document.getElementById('pdfStudent');
+  const sid=sel.value;
+  if(!sid){toast('กรุณาเลือกนักเรียน','err');return;}
+  const student=studentCache.find(r=>r[1]===sid);
+  if(!student){toast('ไม่พบข้อมูลนักเรียน','err');return;}
+  const termFilter=document.getElementById('pdfTerm').value.trim();
+
+  const scores=scoreCache.filter(r=>r[0]===sid);
+  const attRows=attendanceCache.filter(r=>r[0]===sid&&(!termFilter||r[2]===termFilter));
+
+  const schoolName=document.getElementById('ssSchoolName').value.trim()||'-';
+  const affiliation=document.getElementById('ssAffiliation').value.trim();
+  const addrParts=[document.getElementById('ssAddress').value.trim(),document.getElementById('ssTambon').value.trim(),document.getElementById('ssAmphoe').value.trim(),document.getElementById('ssChangwat').value.trim(),document.getElementById('ssZipcode').value.trim()].filter(Boolean);
+  const address=addrParts.join(' ');
+  const logoHtml=currentLogo?`<img src="${currentLogo}" style="width:64px;height:64px;object-fit:cover;border-radius:8px">`:'';
+  const directorName=document.getElementById('ssDirName').value.trim();
+  const directorTitle=document.getElementById('ssDirTitle').value.trim()||'ผู้อำนวยการโรงเรียน';
+  const showSigners=document.getElementById('ssShowSignPp5').checked;
+  const signers=[1,2,3,4].map(i=>({name:document.getElementById('ssSigner'+i+'Name').value.trim(),title:document.getElementById('ssSigner'+i+'Title').value.trim()})).filter(s=>s.name);
+
+  const fullName=`${student[3]||''}${student[4]||''} ${student[5]||''}`.trim();
+  const today=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+
+  const scoreRows=scores.length?scores.map(r=>`<tr>
+      <td>${escHtml_(r[2])}</td><td style="text-align:left">${escHtml_(r[3])}</td>
+      <td class="tc">${escHtml_(r[4])}</td><td class="tc">${escHtml_(r[5])}</td><td class="tc">${escHtml_(r[6])}</td>
+      <td class="tc">${escHtml_(r[7])}</td><td class="tc">${escHtml_(r[8])}</td>
+    </tr>`).join(''):'<tr><td colspan="7" class="tc">ยังไม่มีข้อมูลคะแนน</td></tr>';
+
+  const attRowsHtml=attRows.length?attRows.map(r=>`<tr>
+      <td>${escHtml_(r[2])}</td><td class="tc">${escHtml_(r[3])}</td><td class="tc">${escHtml_(r[4])}</td>
+      <td class="tc">${escHtml_(r[5])}</td><td class="tc">${escHtml_(r[6])}</td>
+    </tr>`).join(''):'<tr><td colspan="5" class="tc">ยังไม่มีข้อมูลเวลาเรียน</td></tr>';
+
+  const signersHtml=showSigners&&signers.length?`<div class="sign-row">${signers.map(s=>`
+      <div class="sign-box"><div class="sign-line">.....................................................</div>
+        <div>(${escHtml_(s.name)})</div><div>${escHtml_(s.title)}</div></div>`).join('')}</div>`:'';
+
+  const html=`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+  <title>ปพ.5 - ${escHtml_(fullName)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;font-family:'Sarabun',sans-serif}
+    body{padding:32px;color:#111;font-size:14px;line-height:1.6}
+    .head{display:flex;align-items:center;gap:14px;justify-content:center;text-align:center;margin-bottom:6px}
+    h1{font-family:'Noto Serif Thai',serif;font-size:18px;margin:10px 0 2px}
+    .sub{color:#444;font-size:13px}
+    h2{font-family:'Noto Serif Thai',serif;font-size:16px;text-align:center;margin:14px 0}
+    .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;margin:14px 0;font-size:13.5px}
+    table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+    th,td{border:1px solid #333;padding:6px 8px}
+    th{background:#eee}
+    .tc{text-align:center}
+    .sec-title{font-weight:700;margin-top:20px;margin-bottom:4px}
+    .sign-row{display:flex;justify-content:space-around;margin-top:50px;flex-wrap:wrap;gap:24px}
+    .sign-box{text-align:center;font-size:13px}
+    .sign-line{margin-bottom:6px}
+    .foot{margin-top:40px;text-align:right;font-size:13px}
+    @media print{body{padding:12mm}}
+  </style></head><body>
+    <div class="head">
+      ${logoHtml}
+      <div>
+        <h1>${escHtml_(schoolName)}</h1>
+        <div class="sub">${escHtml_(affiliation)}</div>
+        <div class="sub">${escHtml_(address)}</div>
+      </div>
+    </div>
+    <h2>ระเบียนแสดงผลการพัฒนาคุณภาพผู้เรียนรายวิชา (ปพ.5)</h2>
+    <div class="info">
+      <div><b>ชื่อ-นามสกุล:</b> ${escHtml_(fullName)}</div>
+      <div><b>ชั้น:</b> ${escHtml_(student[6])}</div>
+      <div><b>รหัสนักเรียน:</b> ${escHtml_(student[1])}</div>
+      <div><b>เลขประจำตัวประชาชน:</b> ${escHtml_(student[2])}</div>
+    </div>
+    <div class="sec-title">ผลการเรียนรายวิชา</div>
+    <table>
+      <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>เก็บคะแนน</th><th>กลางภาค</th><th>ปลายภาค</th><th>รวม</th><th>เกรด</th></tr></thead>
+      <tbody>${scoreRows}</tbody>
+    </table>
+    <div class="sec-title">สรุปเวลาเรียน</div>
+    <table>
+      <thead><tr><th>ภาคเรียน</th><th>มาเรียน (วัน)</th><th>ขาด (วัน)</th><th>ลา (วัน)</th><th>สาย (ครั้ง)</th></tr></thead>
+      <tbody>${attRowsHtml}</tbody>
+    </table>
+    <div class="foot">ออกเอกสารเมื่อวันที่ ${today}</div>
+    <div class="sign-row">
+      <div class="sign-box"><div class="sign-line">.....................................................</div>
+        <div>(${escHtml_(directorName||'.....................................................')})</div>
+        <div>${escHtml_(directorTitle)}</div></div>
+    </div>
+    ${signersHtml}
+  </body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('เบราว์เซอร์บล็อกป๊อปอัพ กรุณาอนุญาตแล้วลองใหม่','err');return;}
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+  win.onload=()=>win.print();
+  setTimeout(()=>{try{win.print();}catch(e){}},600);
 }
 
 initLoginGate();
