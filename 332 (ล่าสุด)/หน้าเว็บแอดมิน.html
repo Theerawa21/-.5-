@@ -407,7 +407,7 @@ tr:last-child td{border-bottom:none}
       <div class="page" id="page-settings">
         <div class="card">
           <div class="card-title">⚙️ ตั้งค่าการเชื่อมต่อ (ทำครั้งเดียว)</div>
-          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">ต้องนำ Code.gs ไปติดตั้งเป็น Apps Script ของชีต "ปพ.5" ก่อน แล้ววาง URL ที่ได้จากการ Deploy ไว้ด้านล่าง (ดูขั้นตอนในไฟล์ คำแนะนำการติดตั้ง.txt)</p>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px">ระบบเชื่อมต่อกับชีต "ปพ.5" ไว้ให้อัตโนมัติแล้ว ไม่ต้องตั้งค่าเอง — ใช้ช่องนี้เฉพาะกรณีต้องการเปลี่ยนไปเชื่อมกับชีต/Web App URL อื่น</p>
           <div class="fg"><label class="fl">Web App URL (จาก Apps Script Deploy)</label><input class="fi" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec"></div>
           <button class="btn btn-p btn-sm" onclick="saveUrl()">💾 บันทึก URL</button>
           <p style="font-size:12px;color:var(--text3);margin-top:12px">คัดลอก URL นี้ไปวางในหน้าเว็บครู (หน้าเว็บครู.html) ให้ครูใช้งานร่วมชีตเดียวกัน</p>
@@ -476,7 +476,8 @@ function nav(p){
   document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('active',pg.id==='page-'+p));
   document.getElementById('pgTitle').textContent=PAGE_TITLES[p];
 }
-function getUrl(){return localStorage.getItem('sf_url')||'';}
+var DEFAULT_WEB_APP_URL='https://script.google.com/macros/s/AKfycbxcxe5vAgw7oG0V_Ii7LTd6w-40ZLuEa0LHKL6C4HwLoj63TUh40_31MQI5j6UiLFjo/exec';
+function getUrl(){return localStorage.getItem('sf_url')||DEFAULT_WEB_APP_URL;}
 function saveUrl(){
   const u=document.getElementById('scriptUrl').value.trim();
   if(!u){toast('กรุณาวาง URL ก่อน','err');return;}
