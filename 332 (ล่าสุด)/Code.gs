@@ -8,7 +8,8 @@ var SHEETS = {
   attendance: 'เวลาเรียน',
   teacher: 'ครู',
   class: 'ชั้นเรียน',
-  holiday: 'วันหยุด'
+  holiday: 'วันหยุด',
+  assignment: 'มอบหมายวิชา'
 };
 
 var HEADERS = {
@@ -18,7 +19,8 @@ var HEADERS = {
   เวลาเรียน: ['รหัสนักเรียน','ชื่อ-สกุล','ภาคเรียน','มาเรียน(วัน)','ขาด(วัน)','ลา(วัน)','สาย(ครั้ง)','บันทึกเมื่อ'],
   ครู: ['รหัส','ชื่อ-สกุล','ตำแหน่ง','บันทึกเมื่อ'],
   ชั้นเรียน: ['รหัส','ชื่อชั้น','ครูประจำชั้น','บันทึกเมื่อ'],
-  วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ']
+  วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ'],
+  'มอบหมายวิชา': ['รหัส','ครูผู้สอน','รหัสวิชา','ชื่อวิชา','ระดับชั้น/ห้อง','ภาคเรียน','กลุ่มสาระ','หมายเหตุ','บันทึกเมื่อ']
 };
 
 // ── ชีตผู้ใช้งาน (ชื่อ+รหัสผ่านสำหรับล็อกอิน) ──
@@ -183,6 +185,15 @@ function doPost(e) {
     sh.appendRow([newId_(), data.date || '', data.name || '', data.kind || 'หยุด', new Date()]);
   } else if (type === 'holiday_del') {
     deleteRowById_(SHEETS.holiday, data.id);
+  } else if (type === 'assignment') {
+    var sh = getOrCreateSheet_(SHEETS.assignment);
+    sh.appendRow([
+      newId_(), data.teacher || '', data.subjectCode || '', data.subjectName || '',
+      data.classRoom || '', data.term || '', data.department || '', data.note || '',
+      new Date()
+    ]);
+  } else if (type === 'assignment_del') {
+    deleteRowById_(SHEETS.assignment, data.id);
   } else if (type === 'settings') {
     saveSettings_(data.settings || {});
   } else if (type === 'logo_upload') {
