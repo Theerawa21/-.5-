@@ -27,7 +27,8 @@ input,select{font-family:var(--font);color:var(--text)}
 #main{margin-left:var(--sw);flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh}
 
 .sb-head{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.sb-logo{width:36px;height:36px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-logo{width:36px;height:36px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden}
+.sb-logo img{width:100%;height:100%;object-fit:cover}
 .sb-name{font-size:13px;font-weight:700}
 .sb-role{font-size:10px;letter-spacing:1px;color:var(--gold);font-weight:700;text-transform:uppercase;background:var(--gold-light);display:inline-block;padding:1px 6px;border-radius:4px;margin-top:2px}
 .sb-nav{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:2px}
@@ -123,7 +124,7 @@ tr:last-child td{border-bottom:none}
 <div id="app" style="display:none">
   <aside id="sidebar">
     <div class="sb-head">
-      <div class="sb-logo">📋</div>
+      <div class="sb-logo" id="sbLogo">📋</div>
       <div><div class="sb-name">ปพ.5 · รร.เซนต์เทเรซา</div><div class="sb-role" id="sbRole">ผู้ดูแลระบบ</div></div>
     </div>
     <nav class="sb-nav">
@@ -562,6 +563,7 @@ var scoreCache = [];
 var attendanceCache = [];
 var PAGE_TITLES = {home:'หน้าหลัก',student:'นักเรียน',subject:'รายวิชา',score:'บันทึกคะแนน',attendance:'เวลาเรียน',schoolsettings:'ตั้งค่าโรงเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
 var currentLogo = '';
+var currentLogoFileId = '';
 var teacherCache = [];
 var classCache = [];
 var holidayCache = [];
@@ -829,19 +831,38 @@ async function loadAttendance(){
 }
 
 // ── ตั้งค่าโรงเรียน ──
+// หมายเหตุ: เซลล์ Google Sheets จำกัดที่ 50,000 ตัวอักษร รูปภาพแปลงเป็น base64 มักเกินขนาดนี้จนบันทึกไม่ติด (เงียบๆ ไม่มี error)
+// จึงอัปโหลดไฟล์จริงขึ้น Google Drive ทันทีที่เลือกรูป แล้วเก็บแค่ URL สั้นๆ ไว้ในการตั้งค่าแทน
 function onLogoPick(input){
   const f=input.files[0];
   if(!f)return;
-  if(f.size>1500000){toast('ไฟล์รูปใหญ่เกินไป (จำกัด ~1.5MB)','err');return;}
+  if(f.size>3000000){toast('ไฟล์รูปใหญ่เกินไป (จำกัด ~3MB)','err');input.value='';return;}
   const reader=new FileReader();
-  reader.onload=function(ev){
-    currentLogo=ev.target.result;
-    document.getElementById('ssLogoPreview').innerHTML=`<img src="${currentLogo}">`;
+  reader.onload=async function(ev){
+    document.getElementById('ssLogoPreview').innerHTML='⏳';
+    try{
+      const res=await fetch(getUrl(),{method:'POST',body:JSON.stringify({type:'logo_upload',dataUrl:ev.target.result,oldFileId:currentLogoFileId})});
+      const j=await res.json();
+      if(j.status==='ok'){
+        currentLogo=j.url;
+        currentLogoFileId=j.fileId||'';
+        document.getElementById('ssLogoPreview').innerHTML=`<img src="${currentLogo}">`;
+        toast('อัปโหลดโลโก้แล้ว — กด "บันทึกข้อมูลโรงเรียน" เพื่อบันทึกให้ครบ ✅');
+      }else{
+        document.getElementById('ssLogoPreview').innerHTML=currentLogo?`<img src="${currentLogo}">`:'🏫';
+        toast('อัปโหลดโลโก้ไม่สำเร็จ: '+(j.message||''),'err');
+      }
+    }catch(err){
+      document.getElementById('ssLogoPreview').innerHTML=currentLogo?`<img src="${currentLogo}">`:'🏫';
+      toast('อัปโหลดโลโก้ไม่สำเร็จ ตรวจสอบการเชื่อมต่อ','err');
+    }
+    input.value='';
   };
   reader.readAsDataURL(f);
 }
 function clearLogo(){
   currentLogo='';
+  currentLogoFileId='';
   document.getElementById('ssLogoPreview').innerHTML='🏫';
 }
 function collectSettings(){
@@ -851,7 +872,8 @@ function collectSettings(){
     tambon:document.getElementById('ssTambon').value.trim(),
     amphoe:document.getElementById('ssAmphoe').value.trim(),
     changwat:document.getElementById('ssChangwat').value.trim(),
-    logo:currentLogo,
+    logoUrl:currentLogo,
+    logoFileId:currentLogoFileId,
     directorName:document.getElementById('ssDirName').value.trim(),
     directorTitle:document.getElementById('ssDirTitle').value.trim(),
     signers:[1,2,3,4].map(i=>({name:document.getElementById('ssSigner'+i+'Name').value.trim(),title:document.getElementById('ssSigner'+i+'Title').value.trim()})),
@@ -870,8 +892,10 @@ function applySettings(s){
   document.getElementById('ssTambon').value=s.tambon||'';
   document.getElementById('ssAmphoe').value=s.amphoe||'';
   document.getElementById('ssChangwat').value=s.changwat||'';
-  currentLogo=s.logo||'';
+  currentLogo=s.logoUrl||'';
+  currentLogoFileId=s.logoFileId||'';
   document.getElementById('ssLogoPreview').innerHTML=currentLogo?`<img src="${currentLogo}">`:'🏫';
+  document.getElementById('sbLogo').innerHTML=currentLogo?`<img src="${currentLogo}">`:'📋';
   document.getElementById('ssDirName').value=s.directorName||'';
   document.getElementById('ssDirTitle').value=s.directorTitle||'ผู้อำนวยการโรงเรียน';
   const signers=s.signers||[];

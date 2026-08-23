@@ -98,6 +98,31 @@ function getSettings_() {
   try { return JSON.parse(v); } catch (err) { return {}; }
 }
 
+// ── อัปโหลดโลโก้ไป Google Drive ──
+// เซลล์ของ Google Sheets จำกัดไว้ที่ 50,000 ตัวอักษร ซึ่งรูปภาพแปลงเป็น base64 มักเกินขนาดนี้เสมอ
+// จึงอัปโหลดไฟล์จริงไป Drive แล้วเก็บแค่ URL (สั้น) ไว้ในการตั้งค่าแทน
+function uploadLogo_(dataUrl, oldFileId) {
+  var match = String(dataUrl || '').match(/^data:([^;]+);base64,(.*)$/);
+  if (!match) return { status: 'error', message: 'ข้อมูลรูปภาพไม่ถูกต้อง' };
+  var mimeType = match[1];
+  var bytes = Utilities.base64Decode(match[2]);
+  var blob = Utilities.newBlob(bytes, mimeType, 'logo');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var folder;
+  var parents = DriveApp.getFileById(ss.getId()).getParents();
+  folder = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+
+  if (oldFileId) {
+    try { DriveApp.getFileById(oldFileId).setTrashed(true); } catch (err) { /* ไฟล์เดิมอาจถูกลบไปแล้ว ข้ามได้ */ }
+  }
+
+  var file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  var url = 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w300';
+  return { status: 'ok', url: url, fileId: file.getId() };
+}
+
 function doPost(e) {
   var data = JSON.parse(e.postData.contents);
   var type = data.type;
@@ -153,6 +178,10 @@ function doPost(e) {
     deleteRowById_(SHEETS.holiday, data.id);
   } else if (type === 'settings') {
     saveSettings_(data.settings || {});
+  } else if (type === 'logo_upload') {
+    var result = uploadLogo_(data.dataUrl, data.oldFileId);
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
   } else if (type === 'user') {
     var sh = getUserSheet_();
     sh.appendRow([

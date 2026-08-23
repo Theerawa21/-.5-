@@ -10,7 +10,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .wrap{max-width:560px;width:100%}
-h1{font-family:'Noto Serif Thai',serif;font-size:26px;margin-bottom:6px;text-align:center}
+.logo-box{width:64px;height:64px;border-radius:14px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.logo-box img{width:100%;height:100%;object-fit:cover}
+h1{font-family:'Noto Serif Thai',serif;font-size:24px;margin-bottom:6px;text-align:center}
 .sub{color:var(--text2);text-align:center;margin-bottom:28px;font-size:14px}
 .grp{margin-bottom:22px}
 .grp-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
@@ -22,7 +24,8 @@ a.card span{display:block;color:var(--text2);font-size:12.5px;margin-top:2px}
 </head>
 <body>
 <div class="wrap">
-  <h1>📋 แบบบันทึกผลการพัฒนาคุณภาพผู้เรียนรายวิชา</h1>
+  <div class="logo-box" id="pageLogo">📋</div>
+  <h1>แบบบันทึกผลการพัฒนาคุณภาพผู้เรียนรายวิชา</h1>
   <div class="sub">โรงเรียนเซนต์เทเรซา</div>
 
   <div class="grp">
@@ -38,5 +41,15 @@ a.card span{display:block;color:var(--text2);font-size:12.5px;margin-top:2px}
     <a class="card" href="330/index.html"><b>เวอร์ชัน 330</b></a>
   </div>
 </div>
+<script>
+(async function(){
+  const WEB_APP_URL='https://script.google.com/macros/s/AKfycbx619JredxDmDjXjIINPwvavtUzqfg49K1Tx9PgZiK39YfZOEF37uwzcSET1AcENGVG/exec';
+  try{
+    const res=await fetch(WEB_APP_URL+'?type=settings');
+    const s=await res.json();
+    if(s&&s.logoUrl)document.getElementById('pageLogo').innerHTML=`<img src="${s.logoUrl}">`;
+  }catch(err){}
+})();
+</script>
 </body>
 </html>
