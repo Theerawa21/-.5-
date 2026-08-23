@@ -135,31 +135,26 @@ tr:last-child td{border-bottom:none}
           <div class="card-title">➕ เพิ่มนักเรียน</div>
           <div class="frow">
             <div class="fg"><label class="fl">เลขที่</label><input class="fi" id="fNo" type="number" min="1"></div>
+            <div class="fg"><label class="fl">รหัสนักเรียน</label><input class="fi" id="fSid"></div>
+            <div class="fg"><label class="fl">เลขประจำตัวประชาชน</label><input class="fi" id="fCid" maxlength="13"></div>
+          </div>
+          <div class="frow">
             <div class="fg"><label class="fl">คำนำหน้า</label>
-              <select class="fi" id="fPrefix" onchange="syncGender()">
+              <select class="fi" id="fPrefix">
                 <option>เด็กชาย</option><option>เด็กหญิง</option><option>นาย</option><option>นาง</option><option>นางสาว</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">เพศ</label><select class="fi" id="fGender"><option>ชาย</option><option>หญิง</option></select></div>
-          </div>
-          <div class="frow">
             <div class="fg"><label class="fl">ชื่อ</label><input class="fi" id="fFname"></div>
             <div class="fg"><label class="fl">นามสกุล</label><input class="fi" id="fLname"></div>
           </div>
           <div class="frow">
-            <div class="fg"><label class="fl">ชั้น</label><input class="fi" id="fGrade" placeholder="เช่น ป.6"></div>
-            <div class="fg"><label class="fl">ห้อง</label><input class="fi" id="fRoom"></div>
-          </div>
-          <div class="frow">
-            <div class="fg"><label class="fl">รหัสนักเรียน</label><input class="fi" id="fSid"></div>
-            <div class="fg"><label class="fl">เลขประจำตัวประชาชน</label><input class="fi" id="fCid" maxlength="13"></div>
-            <div class="fg"><label class="fl">วันเกิด</label><input class="fi" id="fBday" type="date"></div>
+            <div class="fg"><label class="fl">ชั้น</label><input class="fi" id="fGrade" placeholder="เช่น ป.6/1"></div>
           </div>
           <button class="btn btn-p" id="btnStudent" onclick="submitStudent()">💾 บันทึกนักเรียน</button>
         </div>
         <div class="card">
           <div class="card-title">📥 นำเข้าหลายคนจากไฟล์ CSV</div>
-          <p class="hint">คอลัมน์: เลขที่, คำนำหน้า, ชื่อ, นามสกุล, เพศ, ชั้น, ห้อง, รหัสนักเรียน, เลขประจำตัวประชาชน, วันเกิด — ดาวน์โหลดไฟล์ตัวอย่างเพื่อดูรูปแบบ</p>
+          <p class="hint">คอลัมน์: เลขที่, รหัสนักเรียน, เลขประจำตัวประชาชน, คำนำหน้า, ชื่อ, นามสกุล, ชั้น — ดาวน์โหลดไฟล์ตัวอย่างเพื่อดูรูปแบบ</p>
           <button class="btn btn-s btn-sm" onclick="downloadStudentTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
           <button class="btn btn-p btn-sm" onclick="document.getElementById('stCsvFile').click()">📥 เลือกไฟล์ CSV</button>
           <input type="file" id="stCsvFile" accept=".csv" style="display:none" onchange="importStudentsCSV(this)">
@@ -169,8 +164,8 @@ tr:last-child td{border-bottom:none}
             <span>📄 รายชื่อที่บันทึกแล้ว</span><button class="btn btn-s btn-sm" onclick="loadStudents()">🔄 โหลดใหม่</button>
           </div>
           <div class="tw"><table>
-            <thead><tr><th>ที่</th><th>คำนำหน้า</th><th>ชื่อ</th><th>นามสกุล</th><th>เพศ</th><th>ชั้น</th><th>ห้อง</th><th>รหัสนร.</th></tr></thead>
-            <tbody id="listStudent"><tr><td colspan="8" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+            <thead><tr><th>ที่</th><th>รหัสนร.</th><th>เลขบัตร ปชช.</th><th>คำนำหน้า</th><th>ชื่อ</th><th>นามสกุล</th><th>ชั้น</th></tr></thead>
+            <tbody id="listStudent"><tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -409,7 +404,7 @@ var holidayCache = [];
 
 function updateDashboard(){
   const total=studentCache.length;
-  const male=studentCache.filter(r=>r[4]==='ชาย').length;
+  const male=studentCache.filter(r=>genderFromPrefix(r[3])==='ชาย').length;
   document.getElementById('stNumTotal').textContent=total;
   document.getElementById('stNumMale').textContent=male;
   document.getElementById('stNumFemale').textContent=total-male;
@@ -443,9 +438,8 @@ async function checkSetup(){
   }
   else nav('settings');
 }
-function syncGender(){
-  const p=document.getElementById('fPrefix').value;
-  document.getElementById('fGender').value=(p==='เด็กชาย'||p==='นาย')?'ชาย':'หญิง';
+function genderFromPrefix(prefix){
+  return (prefix==='เด็กชาย'||prefix==='นาย')?'ชาย':'หญิง';
 }
 function toast(msg,type){
   const c=document.getElementById('toast-c');
@@ -545,17 +539,14 @@ async function submitStudent(){
   if(!fname){toast('กรุณากรอกชื่อ','err');return;}
   const data={type:'student',
     no:document.getElementById('fNo').value,
+    sid:document.getElementById('fSid').value.trim(),
+    cid:document.getElementById('fCid').value.trim(),
     prefix:document.getElementById('fPrefix').value,
     fname:fname,
     lname:document.getElementById('fLname').value.trim(),
-    gender:document.getElementById('fGender').value,
-    grade:document.getElementById('fGrade').value.trim(),
-    room:document.getElementById('fRoom').value.trim(),
-    sid:document.getElementById('fSid').value.trim(),
-    cid:document.getElementById('fCid').value.trim(),
-    bday:document.getElementById('fBday').value};
+    grade:document.getElementById('fGrade').value.trim()};
   if(await postData(data,'btnStudent','บันทึกนักเรียนแล้ว ✅')){
-    ['fNo','fFname','fLname','fGrade','fRoom','fSid','fCid','fBday'].forEach(id=>document.getElementById(id).value='');
+    ['fNo','fSid','fCid','fFname','fLname','fGrade'].forEach(id=>document.getElementById(id).value='');
     loadStudents();
   }
 }
@@ -563,13 +554,13 @@ async function loadStudents(){
   const rows=await fetchType('student');
   const tbody=document.getElementById('listStudent');
   studentCache=rows.slice(1);
-  if(studentCache.length===0){tbody.innerHTML='<tr><td colspan="8" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  if(studentCache.length===0){tbody.innerHTML='<tr><td colspan="7" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
   else{
-    tbody.innerHTML=studentCache.map(r=>`<tr><td class="tc">${r[0]??''}</td><td>${r[1]??''}</td><td>${r[2]??''}</td><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td>${r[8]??''}</td><td>${r[9]??''}</td><td>${r[5]??''}</td></tr>`).join('');
+    tbody.innerHTML=studentCache.map(r=>`<tr><td class="tc">${r[0]??''}</td><td>${r[1]??''}</td><td>${r[2]??''}</td><td>${r[3]??''}</td><td>${r[4]??''}</td><td>${r[5]??''}</td><td>${r[6]??''}</td></tr>`).join('');
   }
   const opts='<option value="">— เลือกนักเรียน —</option>'+studentCache.map(r=>{
-    const sid=r[5]||''; const name=(r[1]||'')+(r[2]||'')+' '+(r[3]||'');
-    return `<option value="${sid}" data-name="${(r[2]||'')+' '+(r[3]||'')}">${name} (${sid})</option>`;
+    const sid=r[1]||''; const name=(r[3]||'')+(r[4]||'')+' '+(r[5]||'');
+    return `<option value="${sid}" data-name="${(r[4]||'')+' '+(r[5]||'')}">${name} (${sid})</option>`;
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
@@ -851,9 +842,9 @@ async function loadClasses(){
 // ── นำเข้า/ตัวอย่างไฟล์: นักเรียน ──
 function downloadStudentTemplate(){
   downloadCSV('ตัวอย่างนักเรียน.csv',
-    ['เลขที่','คำนำหน้า','ชื่อ','นามสกุล','เพศ','ชั้น','ห้อง','รหัสนักเรียน','เลขประจำตัวประชาชน','วันเกิด'],
-    [{'เลขที่':1,'คำนำหน้า':'เด็กชาย','ชื่อ':'สมชาย','นามสกุล':'ใจดี','เพศ':'ชาย','ชั้น':'ป.6','ห้อง':'1','รหัสนักเรียน':'12345','เลขประจำตัวประชาชน':'1234567890123','วันเกิด':'2015-05-20'},
-     {'เลขที่':2,'คำนำหน้า':'เด็กหญิง','ชื่อ':'สมหญิง','นามสกุล':'รักเรียน','เพศ':'หญิง','ชั้น':'ป.6','ห้อง':'1','รหัสนักเรียน':'12346','เลขประจำตัวประชาชน':'1234567890124','วันเกิด':'2015-08-02'}]);
+    ['เลขที่','รหัสนักเรียน','เลขประจำตัวประชาชน','คำนำหน้า','ชื่อ','นามสกุล','ชั้น'],
+    [{'เลขที่':1,'รหัสนักเรียน':'12345','เลขประจำตัวประชาชน':'1234567890123','คำนำหน้า':'เด็กชาย','ชื่อ':'สมชาย','นามสกุล':'ใจดี','ชั้น':'ป.6/1'},
+     {'เลขที่':2,'รหัสนักเรียน':'12346','เลขประจำตัวประชาชน':'1234567890124','คำนำหน้า':'เด็กหญิง','ชื่อ':'สมหญิง','นามสกุล':'รักเรียน','ชั้น':'ป.6/1'}]);
 }
 async function importStudentsCSV(input){
   const file=input.files[0];
@@ -862,15 +853,12 @@ async function importStudentsCSV(input){
     if(!fname)return null;
     return {type:'student',
       no:row['เลขที่']||'',
+      sid:row['รหัสนักเรียน']||'',
+      cid:row['เลขประจำตัวประชาชน']||'',
       prefix:row['คำนำหน้า']||'เด็กชาย',
       fname:fname,
       lname:row['นามสกุล']||'',
-      gender:row['เพศ']||(['เด็กชาย','นาย'].includes(row['คำนำหน้า'])?'ชาย':'หญิง'),
-      grade:row['ชั้น']||'',
-      room:row['ห้อง']||'',
-      sid:row['รหัสนักเรียน']||'',
-      cid:row['เลขประจำตัวประชาชน']||'',
-      bday:row['วันเกิด']||''};
+      grade:row['ชั้น']||''};
   },loadStudents);
   input.value='';
 }
@@ -889,12 +877,12 @@ async function importScoresCSV(input){
     const sid=row['รหัสนักเรียน'];
     const code=row['รหัสวิชา'];
     if(!sid||!code)return null;
-    const student=studentCache.find(r=>r[5]===sid);
+    const student=studentCache.find(r=>r[1]===sid);
     const subject=subjectCache.find(r=>r[0]===code);
     if(!student||!subject)return null;
     return {type:'score',
       sid:sid,
-      studentName:(student[2]||'')+' '+(student[3]||''),
+      studentName:(student[4]||'')+' '+(student[5]||''),
       subjectCode:code,
       subjectName:subject[1]||'',
       formative:row['เก็บคะแนน']||0,
@@ -918,11 +906,11 @@ async function importAttendanceCSV(input){
   await bulkImport(file,(row)=>{
     const sid=row['รหัสนักเรียน'];
     if(!sid)return null;
-    const student=studentCache.find(r=>r[5]===sid);
+    const student=studentCache.find(r=>r[1]===sid);
     if(!student)return null;
     return {type:'attendance',
       sid:sid,
-      studentName:(student[2]||'')+' '+(student[3]||''),
+      studentName:(student[4]||'')+' '+(student[5]||''),
       term:row['ภาคเรียน']||'',
       present:row['มาเรียน']||0,
       absent:row['ขาด']||0,

@@ -321,8 +321,8 @@ async function loadStudentOptions(){
   const list=rows.slice(1);
   studentCache=list;
   const opts='<option value="">— เลือกนักเรียน —</option>'+list.map(r=>{
-    const sid=r[5]||''; const name=(r[1]||'')+(r[2]||'')+' '+(r[3]||'');
-    return `<option value="${sid}" data-name="${(r[2]||'')+' '+(r[3]||'')}">${name} (${sid})</option>`;
+    const sid=r[1]||''; const name=(r[3]||'')+(r[4]||'')+' '+(r[5]||'');
+    return `<option value="${sid}" data-name="${(r[4]||'')+' '+(r[5]||'')}">${name} (${sid})</option>`;
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
@@ -413,12 +413,12 @@ async function importScoresCSV(input){
     const sid=row['รหัสนักเรียน'];
     const code=row['รหัสวิชา'];
     if(!sid||!code)return null;
-    const student=studentCache.find(r=>r[5]===sid);
+    const student=studentCache.find(r=>r[1]===sid);
     const subject=subjectCache.find(r=>r[0]===code);
     if(!student||!subject)return null;
     return {type:'score',
       sid:sid,
-      studentName:(student[2]||'')+' '+(student[3]||''),
+      studentName:(student[4]||'')+' '+(student[5]||''),
       subjectCode:code,
       subjectName:subject[1]||'',
       formative:row['เก็บคะแนน']||0,
@@ -442,11 +442,11 @@ async function importAttendanceCSV(input){
   await bulkImport(file,(row)=>{
     const sid=row['รหัสนักเรียน'];
     if(!sid)return null;
-    const student=studentCache.find(r=>r[5]===sid);
+    const student=studentCache.find(r=>r[1]===sid);
     if(!student)return null;
     return {type:'attendance',
       sid:sid,
-      studentName:(student[2]||'')+' '+(student[3]||''),
+      studentName:(student[4]||'')+' '+(student[5]||''),
       term:row['ภาคเรียน']||'',
       present:row['มาเรียน']||0,
       absent:row['ขาด']||0,
