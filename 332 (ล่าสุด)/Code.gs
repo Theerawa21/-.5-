@@ -99,8 +99,9 @@ function getSettings_() {
 }
 
 // ── ใช้ครั้งเดียวตอนติดตั้ง: เลือกฟังก์ชันนี้จาก dropdown ด้านบนแล้วกด ▶ Run เพื่อขอสิทธิ์ Google Drive ──
+// (ตั้งชื่อแบบไม่มี _ ต่อท้าย เพราะ Apps Script จะซ่อนฟังก์ชันที่ลงท้ายด้วย _ ออกจาก dropdown เลือกรัน)
 // (ฟังก์ชันอื่นที่มีพารามิเตอร์ เช่น uploadLogo_ กดรันตรงๆ ไม่ได้ผล เพราะไม่มีค่าส่งเข้าไปจะ return ก่อนถึงจุดที่ต้องขอสิทธิ์)
-function requestDriveAccess_() {
+function requestDriveAccess() {
   DriveApp.getRootFolder();
 }
 
