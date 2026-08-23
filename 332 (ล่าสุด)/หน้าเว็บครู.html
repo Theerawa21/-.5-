@@ -91,7 +91,8 @@ tr:last-child td{border-bottom:none}
     <div class="login-sub">ปพ.5 · รร.เซนต์เทเรซา — ครู</div>
     <div class="fg" style="text-align:left">
       <label class="fl">ชื่อผู้ใช้ / User ID</label>
-      <input class="fi" id="loginUser" placeholder="ชื่อ-สกุล หรือ User ID" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
+      <input class="fi" id="loginUser" list="loginUserList" autocomplete="off" placeholder="พิมพ์ชื่อ-สกุล หรือ User ID" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
+      <datalist id="loginUserList"></datalist>
     </div>
     <div class="fg" style="text-align:left">
       <label class="fl">รหัสผ่าน</label>
@@ -256,6 +257,16 @@ function initLoginGate(){
   if(user){
     unlockApp(user);
   }
+  loadUsernameList();
+}
+async function loadUsernameList(){
+  try{
+    const res=await fetch(DEFAULT_WEB_APP_URL+'?type=usernames');
+    const rows=await res.json();
+    if(!Array.isArray(rows))return;
+    document.getElementById('loginUserList').innerHTML=
+      rows.map(r=>`<option value="${(r[1]||'').replace(/"/g,'&quot;')}">`).join('');
+  }catch(err){}
 }
 
 var subjectFullMap = {};

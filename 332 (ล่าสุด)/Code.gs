@@ -215,6 +215,18 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (type === 'usernames') {
+    // สำหรับ autocomplete ในช่องล็อกอิน — ส่งเฉพาะ User_ID + ชื่อ ไม่มีบทบาท/แผนก/รหัสผ่าน
+    var sh = getUserSheet_();
+    var values = sh.getDataRange().getValues();
+    var list = [];
+    for (var i = 1; i < values.length; i++) {
+      list.push([values[i][0], values[i][1]]);
+    }
+    return ContentService.createTextOutput(JSON.stringify(list))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   var name = SHEETS[type];
   if (!name) {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'unknown type' }))
