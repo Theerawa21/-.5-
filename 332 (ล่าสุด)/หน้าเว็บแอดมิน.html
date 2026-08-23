@@ -103,10 +103,14 @@ tr:last-child td{border-bottom:none}
     <div class="login-title">เข้าสู่ระบบ</div>
     <div class="login-sub">ปพ.5 · รร.เซนต์เทเรซา — ผู้ดูแลระบบ</div>
     <div class="fg" style="text-align:left">
-      <label class="fl">รหัสผ่าน</label>
-      <input class="fi" id="loginPin" type="password" inputmode="numeric" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')tryLogin()">
+      <label class="fl">ชื่อผู้ใช้ / User ID</label>
+      <input class="fi" id="loginUser" placeholder="ชื่อ-สกุล หรือ User ID" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
     </div>
-    <button class="btn btn-p" style="width:100%" onclick="tryLogin()">🔑 เข้าสู่ระบบ</button>
+    <div class="fg" style="text-align:left">
+      <label class="fl">รหัสผ่าน</label>
+      <input class="fi" id="loginPin" type="password" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')tryLogin()">
+    </div>
+    <button class="btn btn-p" style="width:100%" id="btnLogin" onclick="tryLogin()">🔑 เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
@@ -114,7 +118,7 @@ tr:last-child td{border-bottom:none}
   <aside id="sidebar">
     <div class="sb-head">
       <div class="sb-logo">📋</div>
-      <div><div class="sb-name">ปพ.5 · รร.เซนต์เทเรซา</div><div class="sb-role">ผู้ดูแลระบบ</div></div>
+      <div><div class="sb-name">ปพ.5 · รร.เซนต์เทเรซา</div><div class="sb-role" id="sbRole">ผู้ดูแลระบบ</div></div>
     </div>
     <nav class="sb-nav">
       <button class="ni active" data-p="home" onclick="nav('home')"><span class="ni-icon">🏠</span><span>หน้าหลัก</span></button>
@@ -387,6 +391,39 @@ tr:last-child td{border-bottom:none}
         </div>
 
         <div class="card">
+          <div class="card-title">🔑 บัญชีผู้ใช้งาน (สำหรับเข้าสู่ระบบ)</div>
+          <p class="hint">รายชื่อ+รหัสผ่านสำหรับล็อกอินจริง เก็บไว้ในชีตเท่านั้น ไม่แสดงรหัสผ่านกลับมาที่หน้าเว็บ (ตรวจสอบผ่าน Apps Script ฝั่งเซิร์ฟเวอร์เท่านั้น) — บทบาท admin/director เข้าหน้าแอดมินได้ บทบาทอื่นเข้าได้เฉพาะหน้าครู</p>
+          <div class="frow">
+            <div class="fg"><label class="fl">User ID (เว้นว่างได้)</label><input class="fi" id="usUserId" placeholder="เช่น U-260419121715"></div>
+            <div class="fg"><label class="fl">ชื่อ-สกุล</label><input class="fi" id="usName"></div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label class="fl">บทบาท</label>
+              <select class="fi" id="usRole">
+                <option value="admin">admin (ผู้ดูแลระบบ)</option>
+                <option value="director">director (ผู้อำนวยการ)</option>
+                <option value="hod">hod (หัวหน้ากลุ่มสาระ)</option>
+                <option value="teacher" selected>teacher (ครูผู้สอน)</option>
+                <option value="academic_secondary">academic_secondary (วิชาการมัธยม)</option>
+                <option value="academic_primary">academic_primary (วิชาการประถม)</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">แผนก/กลุ่มสาระ</label><input class="fi" id="usDept" placeholder="เช่น คณิตศาสตร์"></div>
+            <div class="fg"><label class="fl">รหัสผ่าน</label><input class="fi" id="usPassword" type="password"></div>
+          </div>
+          <button class="btn btn-p btn-sm" id="btnUser" onclick="addUser()">➕ เพิ่มบัญชี</button>
+          <div class="sub-title">นำเข้าหลายบัญชีจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: User_ID, ชื่อ, บทบาท, แผนก, รหัสผ่าน</p>
+          <button class="btn btn-s btn-sm" onclick="downloadUserTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('usCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="usCsvFile" accept=".csv" style="display:none" onchange="importUsersCSV(this)">
+          <div class="tw" style="margin-top:14px"><table>
+            <thead><tr><th>User ID</th><th>ชื่อ-สกุล</th><th>บทบาท</th><th>แผนก</th><th>รหัสผ่าน</th><th>จัดการ</th></tr></thead>
+            <tbody id="listUser"><tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่ได้โหลดข้อมูล</td></tr></tbody>
+          </table></div>
+        </div>
+
+        <div class="card">
           <div class="card-title">📏 เกณฑ์การตัดสินผลการเรียน</div>
           <div class="chk-row"><input type="checkbox" id="ssGradeFromT1"><label for="ssGradeFromT1">แสดงเกรดตั้งแต่ภาคเรียนที่ 1 (ระดับประถมศึกษา)</label></div>
           <button class="btn btn-p btn-sm" onclick="saveSchoolInfo()">💾 บันทึกเกณฑ์</button>
@@ -428,31 +465,53 @@ tr:last-child td{border-bottom:none}
 <div id="toast-c"></div>
 
 <script>
-// ── เข้าสู่ระบบ (รหัสผ่านตายตัวฝั่งไคลเอนต์ — กันคนเปิดเจอโดยบังเอิญเท่านั้น ไม่ใช่ระบบความปลอดภัยจริง) ──
-var LOGIN_PIN='123456';
-var LOGIN_KEY='sf_admin_loggedin';
-function tryLogin(){
-  const val=document.getElementById('loginPin').value;
-  if(val===LOGIN_PIN){
-    sessionStorage.setItem(LOGIN_KEY,'1');
-    document.getElementById('loginErr').textContent='';
-    document.getElementById('loginPin').value='';
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('app').style.display='flex';
-    checkSetup();
-  }else{
-    document.getElementById('loginErr').textContent='รหัสผ่านไม่ถูกต้อง';
+// ── เข้าสู่ระบบ (ตรวจกับรายชื่อผู้ใช้งานในชีต ผ่าน Apps Script ฝั่งเซิร์ฟเวอร์ — ไม่ส่งรายชื่อ/รหัสผ่านทั้งหมดมาที่เบราว์เซอร์) ──
+var LOGIN_KEY='sf_admin_session';
+var ADMIN_ROLES=['admin','director'];
+function currentUser(){
+  try{ return JSON.parse(sessionStorage.getItem(LOGIN_KEY)||'null'); }catch(e){ return null; }
+}
+function unlockApp(user){
+  document.getElementById('sbRole').textContent=user.name+(user.role?' ('+user.role+')':'');
+  document.getElementById('loginOverlay').style.display='none';
+  document.getElementById('app').style.display='flex';
+  checkSetup();
+}
+async function tryLogin(){
+  const username=document.getElementById('loginUser').value.trim();
+  const password=document.getElementById('loginPin').value;
+  const errEl=document.getElementById('loginErr');
+  if(!username||!password){errEl.textContent='กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';return;}
+  const btn=document.getElementById('btnLogin');
+  btn.disabled=true;btn.textContent='กำลังตรวจสอบ...';
+  errEl.textContent='';
+  try{
+    const res=await fetch(DEFAULT_WEB_APP_URL,{method:'POST',body:JSON.stringify({type:'login',username,password})});
+    const j=await res.json();
+    if(j.status==='ok'){
+      if(!ADMIN_ROLES.includes(j.role)){
+        errEl.textContent='บัญชีนี้ไม่มีสิทธิ์เข้าหน้าผู้ดูแลระบบ';
+      }else{
+        sessionStorage.setItem(LOGIN_KEY,JSON.stringify(j));
+        document.getElementById('loginPin').value='';
+        unlockApp(j);
+      }
+    }else{
+      errEl.textContent=j.message||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    }
+  }catch(err){
+    errEl.textContent='เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง';
   }
+  btn.disabled=false;btn.textContent='🔑 เข้าสู่ระบบ';
 }
 function logout(){
   sessionStorage.removeItem(LOGIN_KEY);
   location.reload();
 }
 function initLoginGate(){
-  if(sessionStorage.getItem(LOGIN_KEY)==='1'){
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('app').style.display='flex';
-    checkSetup();
+  const user=currentUser();
+  if(user&&ADMIN_ROLES.includes(user.role)){
+    unlockApp(user);
   }
 }
 
@@ -499,7 +558,7 @@ async function checkSetup(){
   document.getElementById('connDot').classList.toggle('on',!!u);
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
   if(u){
-    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance(),loadSchoolSettings(),loadTeachers(),loadClasses(),loadHolidays()]);
+    await Promise.all([loadStudents(),loadSubjects(),loadScores(),loadAttendance(),loadSchoolSettings(),loadTeachers(),loadClasses(),loadHolidays(),loadUsers()]);
     updateDashboard();
   }
   else nav('settings');
@@ -1026,6 +1085,57 @@ async function importTeachersCSV(input){
       name:name,
       role:row['ตำแหน่ง']||''};
   },loadTeachers);
+  input.value='';
+}
+
+// ── บัญชีผู้ใช้งาน (สำหรับเข้าสู่ระบบ) ──
+async function addUser(){
+  const name=document.getElementById('usName').value.trim();
+  const password=document.getElementById('usPassword').value;
+  if(!name||!password){toast('กรุณากรอกชื่อและรหัสผ่าน','err');return;}
+  const data={type:'user',
+    userId:document.getElementById('usUserId').value.trim(),
+    name:name,
+    role:document.getElementById('usRole').value,
+    department:document.getElementById('usDept').value.trim(),
+    password:password};
+  if(await postData(data,'btnUser','เพิ่มบัญชีแล้ว ✅')){
+    document.getElementById('usUserId').value='';document.getElementById('usName').value='';
+    document.getElementById('usDept').value='';document.getElementById('usPassword').value='';
+    loadUsers();
+  }
+}
+async function delUser(id){
+  if(await postData({type:'user_del',id},null,'ลบแล้ว')) loadUsers();
+}
+async function loadUsers(){
+  const rows=await fetchType('users_admin');
+  const list=rows.slice(1);
+  const tbody=document.getElementById('listUser');
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="6" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[0]??''}</td><td>${r[1]??''}</td><td>${r[2]??''}</td><td>${r[3]??''}</td><td>${r[4]??''}</td><td><button class="btn btn-d btn-xs" onclick="delUser('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
+}
+function downloadUserTemplate(){
+  downloadCSV('ตัวอย่างบัญชีผู้ใช้งาน.csv',
+    ['User_ID','ชื่อ','บทบาท','แผนก','รหัสผ่าน'],
+    [{'User_ID':'U-00001','ชื่อ':'ครูสมชาย ใจดี','บทบาท':'teacher','แผนก':'คณิตศาสตร์','รหัสผ่าน':'1234'},
+     {'User_ID':'U-00002','ชื่อ':'ครูสมหญิง รักเรียน','บทบาท':'hod','แผนก':'ภาษาไทย','รหัสผ่าน':'1234'}]);
+}
+async function importUsersCSV(input){
+  const file=input.files[0];
+  await bulkImport(file,(row)=>{
+    const name=row['ชื่อ'];
+    const password=row['รหัสผ่าน'];
+    if(!name||!password)return null;
+    return {type:'user',
+      userId:row['User_ID']||'',
+      name:name,
+      role:row['บทบาท']||'teacher',
+      department:row['แผนก']||'',
+      password:password};
+  },loadUsers);
   input.value='';
 }
 

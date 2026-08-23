@@ -90,10 +90,14 @@ tr:last-child td{border-bottom:none}
     <div class="login-title">เข้าสู่ระบบ</div>
     <div class="login-sub">ปพ.5 · รร.เซนต์เทเรซา — ครู</div>
     <div class="fg" style="text-align:left">
-      <label class="fl">รหัสผ่าน</label>
-      <input class="fi" id="loginPin" type="password" inputmode="numeric" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')tryLogin()">
+      <label class="fl">ชื่อผู้ใช้ / User ID</label>
+      <input class="fi" id="loginUser" placeholder="ชื่อ-สกุล หรือ User ID" onkeydown="if(event.key==='Enter')document.getElementById('loginPin').focus()">
     </div>
-    <button class="btn btn-p" style="width:100%" onclick="tryLogin()">🔑 เข้าสู่ระบบ</button>
+    <div class="fg" style="text-align:left">
+      <label class="fl">รหัสผ่าน</label>
+      <input class="fi" id="loginPin" type="password" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')tryLogin()">
+    </div>
+    <button class="btn btn-p" style="width:100%" id="btnLogin" onclick="tryLogin()">🔑 เข้าสู่ระบบ</button>
     <div class="login-err" id="loginErr"></div>
   </div>
 </div>
@@ -101,7 +105,7 @@ tr:last-child td{border-bottom:none}
   <aside id="sidebar">
     <div class="sb-head">
       <div class="sb-logo">📋</div>
-      <div><div class="sb-name">ปพ.5 · รร.เซนต์เทเรซา</div><div class="sb-role">ครู</div></div>
+      <div><div class="sb-name">ปพ.5 · รร.เซนต์เทเรซา</div><div class="sb-role" id="sbRole">ครู</div></div>
     </div>
     <nav class="sb-nav">
       <button class="ni active" data-p="home" onclick="nav('home')"><span class="ni-icon">🏠</span><span>หน้าหลัก</span></button>
@@ -209,31 +213,48 @@ tr:last-child td{border-bottom:none}
 <div id="toast-c"></div>
 
 <script>
-// ── เข้าสู่ระบบ (รหัสผ่านตายตัวฝั่งไคลเอนต์ — กันคนเปิดเจอโดยบังเอิญเท่านั้น ไม่ใช่ระบบความปลอดภัยจริง) ──
-var LOGIN_PIN='1234';
-var LOGIN_KEY='sf_teacher_loggedin';
-function tryLogin(){
-  const val=document.getElementById('loginPin').value;
-  if(val===LOGIN_PIN){
-    sessionStorage.setItem(LOGIN_KEY,'1');
-    document.getElementById('loginErr').textContent='';
-    document.getElementById('loginPin').value='';
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('app').style.display='flex';
-    checkSetup();
-  }else{
-    document.getElementById('loginErr').textContent='รหัสผ่านไม่ถูกต้อง';
+// ── เข้าสู่ระบบ (ตรวจกับรายชื่อผู้ใช้งานในชีต ผ่าน Apps Script ฝั่งเซิร์ฟเวอร์ — ไม่ส่งรายชื่อ/รหัสผ่านทั้งหมดมาที่เบราว์เซอร์) ──
+var LOGIN_KEY='sf_teacher_session';
+function currentUser(){
+  try{ return JSON.parse(sessionStorage.getItem(LOGIN_KEY)||'null'); }catch(e){ return null; }
+}
+function unlockApp(user){
+  document.getElementById('sbRole').textContent=user.name+(user.role?' ('+user.role+')':'');
+  document.getElementById('loginOverlay').style.display='none';
+  document.getElementById('app').style.display='flex';
+  checkSetup();
+}
+async function tryLogin(){
+  const username=document.getElementById('loginUser').value.trim();
+  const password=document.getElementById('loginPin').value;
+  const errEl=document.getElementById('loginErr');
+  if(!username||!password){errEl.textContent='กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';return;}
+  const btn=document.getElementById('btnLogin');
+  btn.disabled=true;btn.textContent='กำลังตรวจสอบ...';
+  errEl.textContent='';
+  try{
+    const res=await fetch(DEFAULT_WEB_APP_URL,{method:'POST',body:JSON.stringify({type:'login',username,password})});
+    const j=await res.json();
+    if(j.status==='ok'){
+      sessionStorage.setItem(LOGIN_KEY,JSON.stringify(j));
+      document.getElementById('loginPin').value='';
+      unlockApp(j);
+    }else{
+      errEl.textContent=j.message||'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+    }
+  }catch(err){
+    errEl.textContent='เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง';
   }
+  btn.disabled=false;btn.textContent='🔑 เข้าสู่ระบบ';
 }
 function logout(){
   sessionStorage.removeItem(LOGIN_KEY);
   location.reload();
 }
 function initLoginGate(){
-  if(sessionStorage.getItem(LOGIN_KEY)==='1'){
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('app').style.display='flex';
-    checkSetup();
+  const user=currentUser();
+  if(user){
+    unlockApp(user);
   }
 }
 

@@ -21,6 +21,28 @@ var HEADERS = {
   วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ']
 };
 
+// ── ชีตผู้ใช้งาน (ชื่อ+รหัสผ่านสำหรับล็อกอิน) ──
+// ตั้งใจแยกออกจาก SHEETS/HEADERS ด้านบน และไม่มี doGet ทั่วไปสำหรับชีตนี้
+// เพื่อไม่ให้ใครก็ตามที่รู้ URL ดึงรายชื่อ+รหัสผ่านทั้งหมดออกไปได้ทาง GET
+var USER_SHEET = 'ผู้ใช้งาน';
+var USER_HEADERS = ['User_ID', 'ชื่อ', 'บทบาท', 'แผนก', 'รหัสผ่าน', 'บันทึกเมื่อ'];
+
+function getUserSheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(USER_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(USER_SHEET);
+    sheet.appendRow(USER_HEADERS);
+  } else if (sheet.getLastRow() === 0) {
+    sheet.appendRow(USER_HEADERS);
+  }
+  return sheet;
+}
+
+function normalize_(s) {
+  return String(s || '').replace(/\s+/g, ' ').trim();
+}
+
 function getOrCreateSheet_(name) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
@@ -131,6 +153,37 @@ function doPost(e) {
     deleteRowById_(SHEETS.holiday, data.id);
   } else if (type === 'settings') {
     saveSettings_(data.settings || {});
+  } else if (type === 'user') {
+    var sh = getUserSheet_();
+    sh.appendRow([
+      data.userId || newId_(), data.name || '', data.role || '', data.department || '',
+      String(data.password || ''), new Date()
+    ]);
+  } else if (type === 'user_del') {
+    deleteRowById_(USER_SHEET, data.id);
+  } else if (type === 'login') {
+    var sh = getUserSheet_();
+    var values = sh.getDataRange().getValues();
+    var input = normalize_(data.username);
+    var pass = String(data.password || '');
+    var found = null;
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      var uid = normalize_(row[0]);
+      var uname = normalize_(row[1]);
+      if ((uid === input || uname === input) && String(row[4]) === pass) {
+        found = row;
+        break;
+      }
+    }
+    if (found) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'ok', name: found[1], role: found[2], department: found[3]
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error', message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+    })).setMimeType(ContentService.MimeType.JSON);
   } else {
     return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'unknown type' }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -145,6 +198,20 @@ function doGet(e) {
 
   if (type === 'settings') {
     return ContentService.createTextOutput(JSON.stringify(getSettings_()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (type === 'users_admin') {
+    // รายชื่อผู้ใช้งานสำหรับหน้าแอดมินดูเท่านั้น — ปิดบังรหัสผ่านเสมอ ไม่ส่งค่าจริงกลับ
+    var sh = getUserSheet_();
+    var values = sh.getDataRange().getValues();
+    var masked = values.map(function (row, i) {
+      if (i === 0) return row;
+      var copy = row.slice();
+      copy[4] = copy[4] ? '••••' : '';
+      return copy;
+    });
+    return ContentService.createTextOutput(JSON.stringify(masked))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
