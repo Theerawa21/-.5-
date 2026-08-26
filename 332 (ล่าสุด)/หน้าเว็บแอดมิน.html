@@ -1123,7 +1123,7 @@ async function importScoresCSV(input){
     const sid=row['รหัสนักเรียน'];
     const code=row['รหัสวิชา'];
     if(!sid||!code)return null;
-    const student=studentCache.find(r=>r[1]===sid);
+    const student=studentCache.find(r=>String(r[1])===String(sid));
     const subject=subjectCache.find(r=>r[0]===code);
     if(!student||!subject)return null;
     return {type:'score',
@@ -1152,7 +1152,7 @@ async function importAttendanceCSV(input){
   await bulkImport(file,(row)=>{
     const sid=row['รหัสนักเรียน'];
     if(!sid)return null;
-    const student=studentCache.find(r=>r[1]===sid);
+    const student=studentCache.find(r=>String(r[1])===String(sid));
     if(!student)return null;
     return {type:'attendance',
       sid:sid,
@@ -1264,12 +1264,12 @@ function generatePP5(){
   const sel=document.getElementById('pdfStudent');
   const sid=sel.value;
   if(!sid){toast('กรุณาเลือกนักเรียน','err');return;}
-  const student=studentCache.find(r=>r[1]===sid);
+  const student=studentCache.find(r=>String(r[1])===String(sid));
   if(!student){toast('ไม่พบข้อมูลนักเรียน','err');return;}
   const termFilter=document.getElementById('pdfTerm').value.trim();
 
-  const scores=scoreCache.filter(r=>r[0]===sid);
-  const attRows=attendanceCache.filter(r=>r[0]===sid&&(!termFilter||r[2]===termFilter));
+  const scores=scoreCache.filter(r=>String(r[0])===String(sid));
+  const attRows=attendanceCache.filter(r=>String(r[0])===String(sid)&&(!termFilter||r[2]===termFilter));
 
   const schoolName=document.getElementById('ssSchoolName').value.trim()||'-';
   const affiliation=document.getElementById('ssAffiliation').value.trim();

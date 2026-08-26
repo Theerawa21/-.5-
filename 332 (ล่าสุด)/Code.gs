@@ -171,7 +171,7 @@ function doPost(e) {
       var indScoreValues = indScoreSheet.getDataRange().getValues();
       var sum = 0;
       for (var jj = 1; jj < indScoreValues.length; jj++) {
-        if (indScoreValues[jj][1] === data.sid && indScoreValues[jj][3] === data.subjectCode) {
+        if (String(indScoreValues[jj][1]) === String(data.sid) && indScoreValues[jj][3] === data.subjectCode) {
           sum += Number(indScoreValues[jj][6]) || 0;
         }
       }
@@ -206,7 +206,7 @@ function doPost(e) {
     ];
     var found = -1;
     for (var kk = 1; kk < values.length; kk++) {
-      if (values[kk][1] === sid && values[kk][4] === indicatorId) { found = kk; break; }
+      if (String(values[kk][1]) === String(sid) && values[kk][4] === indicatorId) { found = kk; break; }
     }
     if (found >= 0) {
       row[0] = values[found][0];

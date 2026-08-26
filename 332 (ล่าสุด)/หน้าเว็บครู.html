@@ -619,7 +619,7 @@ async function updateFormativeFromIndicators(){
     return;
   }
   const scoreRows=await fetchType('indicator_score');
-  const mine=scoreRows.slice(1).filter(r=>r[1]===stSel.value&&r[3]===sjSel.value);
+  const mine=scoreRows.slice(1).filter(r=>String(r[1])===String(stSel.value)&&r[3]===sjSel.value);
   const sum=mine.reduce((s,r)=>s+(Number(r[6])||0),0);
   input.value=sum;
   hint.textContent=`คำนวณจากตัวชี้วัดที่บันทึกแล้ว ${mine.length}/${subjectIndicators.length} ข้อ (รวม ${sum} คะแนน) — ไปแก้ไขที่เมนู "ตัวชี้วัด"`;
@@ -742,7 +742,7 @@ async function importIndicatorScoresCSV(input){
     const code=row['รหัสวิชา'];
     const indName=row['ตัวชี้วัด'];
     if(!sid||!code||!indName)return null;
-    const student=studentCache.find(r=>r[1]===sid);
+    const student=studentCache.find(r=>String(r[1])===String(sid));
     const indicator=indList.find(r=>r[1]===code&&r[3]===indName);
     if(!student||!indicator)return null;
     return {type:'indicator_score',
@@ -923,7 +923,7 @@ async function saveDailyAttendanceGrid(){
   dailyGridDirty.forEach(key=>{
     const idx=key.lastIndexOf('|');
     const sid=key.slice(0,idx), date=key.slice(idx+1);
-    const student=dailyGridStudents.find(r=>r[1]===sid);
+    const student=dailyGridStudents.find(r=>String(r[1])===String(sid));
     if(!student)return;
     records.push({sid,studentName:(student[4]||'')+' '+(student[5]||''),grade:cls,date,status:dailyGridState[key]||''});
   });
@@ -946,7 +946,7 @@ async function importScoresCSV(input){
     const sid=row['รหัสนักเรียน'];
     const code=row['รหัสวิชา'];
     if(!sid||!code)return null;
-    const student=studentCache.find(r=>r[1]===sid);
+    const student=studentCache.find(r=>String(r[1])===String(sid));
     const subject=subjectCache.find(r=>r[0]===code);
     if(!student||!subject)return null;
     return {type:'score',
@@ -975,7 +975,7 @@ async function importAttendanceCSV(input){
   await bulkImport(file,(row)=>{
     const sid=row['รหัสนักเรียน'];
     if(!sid)return null;
-    const student=studentCache.find(r=>r[1]===sid);
+    const student=studentCache.find(r=>String(r[1])===String(sid));
     if(!student)return null;
     return {type:'attendance',
       sid:sid,
