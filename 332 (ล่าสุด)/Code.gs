@@ -11,7 +11,8 @@ var SHEETS = {
   holiday: 'วันหยุด',
   assignment: 'มอบหมายวิชา',
   indicator: 'ตัวชี้วัด',
-  indicator_score: 'คะแนนตัวชี้วัด'
+  indicator_score: 'คะแนนตัวชี้วัด',
+  daily_attendance: 'เวลาเรียนรายวัน'
 };
 
 var HEADERS = {
@@ -24,7 +25,8 @@ var HEADERS = {
   วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ'],
   'มอบหมายวิชา': ['รหัส','ครูผู้สอน','รหัสวิชา','ชื่อวิชา','ระดับชั้น/ห้อง','ภาคเรียน','กลุ่มสาระ','หมายเหตุ','บันทึกเมื่อ'],
   'ตัวชี้วัด': ['รหัส','รหัสวิชา','ชื่อวิชา','ตัวชี้วัด','คะแนนเต็ม','ผู้กำหนด','บันทึกเมื่อ'],
-  'คะแนนตัวชี้วัด': ['รหัส','รหัสนักเรียน','ชื่อ-สกุล','รหัสวิชา','รหัสตัวชี้วัด','ตัวชี้วัด','คะแนนที่ได้','บันทึกเมื่อ']
+  'คะแนนตัวชี้วัด': ['รหัส','รหัสนักเรียน','ชื่อ-สกุล','รหัสวิชา','รหัสตัวชี้วัด','ตัวชี้วัด','คะแนนที่ได้','บันทึกเมื่อ'],
+  'เวลาเรียนรายวัน': ['รหัส','รหัสนักเรียน','ชื่อ-สกุล','ชั้น','วันที่','สถานะ','บันทึกเมื่อ']
 };
 
 // ── ชีตผู้ใช้งาน (ชื่อ+รหัสผ่านสำหรับล็อกอิน) ──
@@ -221,6 +223,34 @@ function doPost(e) {
       Number(data.present) || 0, Number(data.absent) || 0, Number(data.leave) || 0, Number(data.late) || 0,
       new Date()
     ]);
+  } else if (type === 'daily_attendance_bulk') {
+    // บันทึกเวลาเรียนรายวันหลายรายการพร้อมกันในครั้งเดียว (มาจากตารางกรอกเวลาเรียนรายวันแบบ ปพ.5)
+    // อัปเดตทับแถวเดิมถ้ามีอยู่แล้ว (จับคู่ด้วยรหัสนักเรียน+วันที่) ไม่งั้นเพิ่มแถวใหม่แบบ batch เพื่อความเร็ว
+    var sh = getOrCreateSheet_(SHEETS.daily_attendance);
+    var values = sh.getDataRange().getValues();
+    var headerLen = HEADERS[SHEETS.daily_attendance].length;
+    var keyIndex = {};
+    for (var r = 1; r < values.length; r++) {
+      keyIndex[values[r][1] + '|' + values[r][4]] = r;
+    }
+    var records = data.records || [];
+    var newRows = [];
+    var now = new Date();
+    records.forEach(function (rec) {
+      var key = (rec.sid || '') + '|' + (rec.date || '');
+      var rowVals = [null, rec.sid || '', rec.studentName || '', rec.grade || '', rec.date || '', rec.status || '', now];
+      if (keyIndex.hasOwnProperty(key)) {
+        var idx = keyIndex[key];
+        rowVals[0] = values[idx][0];
+        sh.getRange(idx + 1, 1, 1, headerLen).setValues([rowVals]);
+      } else {
+        rowVals[0] = newId_();
+        newRows.push(rowVals);
+      }
+    });
+    if (newRows.length > 0) {
+      sh.getRange(sh.getLastRow() + 1, 1, newRows.length, headerLen).setValues(newRows);
+    }
   } else if (type === 'teacher') {
     var sh = getOrCreateSheet_(SHEETS.teacher);
     sh.appendRow([newId_(), data.name || '', data.role || '', new Date()]);

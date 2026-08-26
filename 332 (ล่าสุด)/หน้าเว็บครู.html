@@ -12,6 +12,8 @@
   --text:#1c2b3a;--text2:#51687e;--text3:#8ea0b3;
   --accent:#154d8b;--accent2:#0e3763;--accent-light:#dceaf9;
   --red:#c0392b;--red-light:#fdecea;
+  --amber:#b9770e;--amber-light:#fdf2e3;
+  --blue2:#2f6fae;--blue2-light:#e6f0fa;
   --sw:228px;--r:10px;
   --sh:0 2px 12px rgba(21,77,139,.08);--sh2:0 8px 32px rgba(21,77,139,.15);
   --font:'Sarabun',sans-serif;--serif:'Noto Serif Thai',serif;
@@ -69,6 +71,15 @@ input,select{font-family:var(--font);color:var(--text)}
 .btn-xs{padding:3px 8px;font-size:11px}
 .hint{font-size:13px;color:var(--text2);margin-bottom:12px}
 .tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+.da-table{min-width:100%}
+.da-table th,.da-table td{padding:5px 6px;font-size:12px;white-space:nowrap}
+.da-name-col{min-width:44px}.da-name-col2{min-width:130px;white-space:nowrap}
+.da-cell{cursor:pointer;user-select:none;font-weight:700;min-width:26px}
+.da-cell:hover{background:var(--surface2)}
+.da-off{background:var(--border);color:var(--text3)}
+.da-absent{background:var(--red-light);color:var(--red)}
+.da-leave{background:var(--amber-light);color:var(--amber)}
+.da-late{background:var(--blue2-light);color:var(--blue2)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
 th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-size:11px;text-transform:uppercase}
 td{padding:9px 12px;border-bottom:1px solid var(--border)}
@@ -240,7 +251,22 @@ tr:last-child td{border-bottom:none}
 
       <div class="page" id="page-attendance">
         <div class="card">
-          <div class="card-title">➕ บันทึกเวลาเรียน (สรุปจำนวนวัน)</div>
+          <div class="card-title">🗓️ กรอกเวลาเรียนรายวัน (ตามแบบ ปพ.5)</div>
+          <p class="hint">เลือกชั้นเรียนและเดือน แล้วคลิกที่ช่องของนักเรียนแต่ละคนในแต่ละวันเพื่อทำเครื่องหมาย — ค่าเริ่มต้นคือมาเรียนปกติ (ไม่ต้องทำเครื่องหมาย) คลิกวนได้ ขาด → ลา → สาย → ว่าง วันหยุด/เสาร์-อาทิตย์จะแรเงาให้อัตโนมัติจากข้อมูลวันหยุดของโรงเรียน</p>
+          <div class="frow">
+            <div class="fg"><label class="fl">ชั้นเรียน</label><select class="fi" id="daClass"><option value="">— เลือกชั้นเรียน —</option></select></div>
+            <div class="fg"><label class="fl">เดือน</label><select class="fi" id="daMonth"></select></div>
+            <div class="fg"><label class="fl">ปี พ.ศ.</label><input class="fi" id="daYear" type="number"></div>
+            <div class="fg" style="align-self:flex-end"><button class="btn btn-s" onclick="loadDailyAttendanceGrid()">🔄 แสดงตาราง</button></div>
+          </div>
+          <div id="daGridWrap" class="tw" style="margin-top:14px">
+            <div class="tc" style="color:var(--text3);padding:20px">เลือกชั้นเรียนและเดือนแล้วกด "แสดงตาราง"</div>
+          </div>
+          <button class="btn btn-p" id="btnDailyAttendance" onclick="saveDailyAttendanceGrid()" style="margin-top:14px;display:none">💾 บันทึกเวลาเรียนรายวัน</button>
+        </div>
+        <div class="card">
+          <div class="card-title">➕ บันทึกเวลาเรียน (สรุปจำนวนวัน แบบเดิม)</div>
+          <p class="hint">วิธีกรอกยอดรวมเองแบบเดิม เผื่อกรณีไม่ได้กรอกรายวัน</p>
           <div class="frow">
             <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="atStudent"><option value="">— เลือกนักเรียน —</option></select></div>
             <div class="fg"><label class="fl">ภาคเรียน</label><input class="fi" id="atTerm" placeholder="เช่น 1/2569"></div>
@@ -400,6 +426,8 @@ async function checkSetup(){
   document.getElementById('connText').textContent=u?'เชื่อมต่อแล้ว':'ยังไม่ได้เชื่อมต่อ';
   if(u){
     await Promise.all([loadStudentOptions(),loadSubjectOptions(),loadScores(),loadAttendance(),loadSchoolLogo()]);
+    populateDailyAttendanceMonths();
+    await loadDailyAttendanceClassOptions();
     updateDashboard();
   }
   else nav('settings');
@@ -765,6 +793,143 @@ async function loadAttendance(){
     tbody.innerHTML=list.map(r=>`<tr><td>${r[1]??''}</td><td>${r[2]??''}</td><td class="tc">${r[3]??''}</td><td class="tc">${r[4]??''}</td><td class="tc">${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
   }
   updateDashboard();
+}
+
+// ── เวลาเรียนรายวัน (ตามแบบ ปพ.5) ──
+var dailyGridState = {};
+var dailyGridDirty = new Set();
+var dailyGridStudents = [];
+var dailyGridDays = [];
+
+function pad2_(n){return String(n).padStart(2,'0');}
+
+function populateDailyAttendanceMonths(){
+  const sel=document.getElementById('daMonth');
+  const months=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  sel.innerHTML=months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  const now=new Date();
+  sel.value=String(now.getMonth()+1);
+  document.getElementById('daYear').value=now.getFullYear()+543;
+}
+async function loadDailyAttendanceClassOptions(){
+  const classesFromStudents=[...new Set(studentCache.map(r=>r[6]).filter(Boolean))].sort();
+  let list=classesFromStudents;
+  try{
+    const rows=await fetchType('class');
+    const myName=(currentUser()&&currentUser().name)?String(currentUser().name).replace(/\s+/g,' ').trim():'';
+    const mine=rows.slice(1)
+      .filter(r=>String(r[2]||'').replace(/\s+/g,' ').trim()===myName)
+      .map(r=>r[1]);
+    if(mine.length>0)list=mine.filter(c=>classesFromStudents.includes(c));
+    if(list.length===0)list=classesFromStudents;
+  }catch(err){}
+  document.getElementById('daClass').innerHTML='<option value="">— เลือกชั้นเรียน —</option>'+list.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+async function loadDailyAttendanceGrid(){
+  const cls=document.getElementById('daClass').value;
+  const month=Number(document.getElementById('daMonth').value);
+  const beYear=Number(document.getElementById('daYear').value);
+  const wrap=document.getElementById('daGridWrap');
+  const btn=document.getElementById('btnDailyAttendance');
+  if(!cls){toast('กรุณาเลือกชั้นเรียนก่อน','err');return;}
+  if(!month||!beYear){toast('กรุณาเลือกเดือนและปีให้ครบ','err');return;}
+  const gYear=beYear-543;
+  const students=studentCache.filter(r=>r[6]===cls).slice().sort((a,b)=>(Number(a[0])||0)-(Number(b[0])||0));
+  if(students.length===0){
+    wrap.innerHTML='<div class="tc" style="color:var(--text3);padding:20px">ไม่พบนักเรียนในชั้นนี้</div>';
+    btn.style.display='none';
+    return;
+  }
+  const daysInMonth=new Date(gYear,month,0).getDate();
+  const monthPrefix=`${gYear}-${pad2_(month)}-`;
+
+  const [holidayRows,attRows]=await Promise.all([fetchType('holiday'),fetchType('daily_attendance')]);
+  const holidayMap={};
+  holidayRows.slice(1).forEach(r=>{ if(String(r[1]||'').trim())holidayMap[r[1]]=r[2]||'วันหยุด'; });
+
+  const weekdayShort=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const days=[];
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr=monthPrefix+pad2_(d);
+    const dow=new Date(gYear,month-1,d).getDay();
+    const isWeekend=(dow===0||dow===6);
+    const holidayName=holidayMap[dateStr];
+    days.push({day:d,date:dateStr,weekday:weekdayShort[dow],isSchoolDay:!isWeekend&&!holidayName,holidayName:holidayName||(isWeekend?'วันหยุดสุดสัปดาห์':'')});
+  }
+  dailyGridDays=days;
+  dailyGridStudents=students;
+  dailyGridState={};
+  attRows.slice(1).forEach(r=>{
+    const date=r[4];
+    if(r[3]===cls && String(date||'').startsWith(monthPrefix) && r[5]){
+      dailyGridState[r[1]+'|'+date]=r[5];
+    }
+  });
+  dailyGridDirty=new Set();
+  renderDailyAttendanceGrid();
+  btn.style.display='inline-flex';
+}
+function daStatusLabel_(s){
+  return s==='ขาด'?'ข':s==='ลา'?'ล':s==='สาย'?'ส':'';
+}
+function daNextStatus_(s){
+  if(s==='')return 'ขาด';
+  if(s==='ขาด')return 'ลา';
+  if(s==='ลา')return 'สาย';
+  return '';
+}
+function daStatusClass_(s){
+  return s==='ขาด'?'da-absent':s==='ลา'?'da-leave':s==='สาย'?'da-late':'';
+}
+function renderDailyAttendanceGrid(){
+  const wrap=document.getElementById('daGridWrap');
+  let html='<table class="da-table"><thead><tr><th class="da-name-col">เลขที่</th><th class="da-name-col2">ชื่อ-สกุล</th>';
+  dailyGridDays.forEach(d=>{
+    html+=`<th class="tc${d.isSchoolDay?'':' da-off'}" title="${d.holidayName||''}">${d.day}<br><span style="font-weight:400;font-size:10px">${d.weekday}</span></th>`;
+  });
+  html+='<th class="tc">ขาด</th><th class="tc">ลา</th><th class="tc">สาย</th></tr></thead><tbody>';
+  dailyGridStudents.forEach(s=>{
+    const sid=s[1]; const name=(s[4]||'')+' '+(s[5]||'');
+    html+=`<tr><td class="tc">${s[0]??''}</td><td>${name}</td>`;
+    let absent=0,leave=0,late=0;
+    dailyGridDays.forEach(d=>{
+      const key=sid+'|'+d.date;
+      const st=dailyGridState[key]||'';
+      if(st==='ขาด')absent++; else if(st==='ลา')leave++; else if(st==='สาย')late++;
+      if(d.isSchoolDay){
+        html+=`<td class="tc da-cell ${daStatusClass_(st)}" onclick="toggleDailyAttendanceCell('${sid}','${d.date}')">${daStatusLabel_(st)}</td>`;
+      }else{
+        html+=`<td class="tc da-off" title="${d.holidayName||''}"></td>`;
+      }
+    });
+    html+=`<td class="tc">${absent}</td><td class="tc">${leave}</td><td class="tc">${late}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+function toggleDailyAttendanceCell(sid,date){
+  const key=sid+'|'+date;
+  const cur=dailyGridState[key]||'';
+  const next=daNextStatus_(cur);
+  if(next)dailyGridState[key]=next; else delete dailyGridState[key];
+  dailyGridDirty.add(key);
+  renderDailyAttendanceGrid();
+}
+document.getElementById('btnDailyAttendance').dataset.label='💾 บันทึกเวลาเรียนรายวัน';
+async function saveDailyAttendanceGrid(){
+  if(dailyGridDirty.size===0){toast('ยังไม่มีการเปลี่ยนแปลง');return;}
+  const cls=document.getElementById('daClass').value;
+  const records=[];
+  dailyGridDirty.forEach(key=>{
+    const idx=key.lastIndexOf('|');
+    const sid=key.slice(0,idx), date=key.slice(idx+1);
+    const student=dailyGridStudents.find(r=>r[1]===sid);
+    if(!student)return;
+    records.push({sid,studentName:(student[4]||'')+' '+(student[5]||''),grade:cls,date,status:dailyGridState[key]||''});
+  });
+  if(await postData({type:'daily_attendance_bulk',records},'btnDailyAttendance',`บันทึกเวลาเรียน ${records.length} รายการแล้ว ✅`)){
+    dailyGridDirty=new Set();
+  }
 }
 
 // ── นำเข้า/ตัวอย่างไฟล์: คะแนน ──
