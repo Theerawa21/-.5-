@@ -145,7 +145,9 @@ tr:last-child td{border-bottom:none}
           <div class="card-title">➕ บันทึกคะแนนรายวิชา</div>
           <div class="frow">
             <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="scStudent"><option value="">— เลือกนักเรียน —</option></select></div>
-            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="scSubject"><option value="">— เลือกวิชา —</option></select></div>
+            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="scSubject"><option value="">— เลือกวิชา —</option></select>
+              <div id="scSubjectHint" style="font-size:11.5px;color:var(--text3);margin-top:4px"></div>
+            </div>
           </div>
           <div class="frow">
             <div class="fg"><label class="fl">เก็บคะแนน</label><input class="fi" id="scFormative" type="number"></div>
@@ -449,10 +451,30 @@ async function loadStudentOptions(){
 }
 async function loadSubjectOptions(){
   const rows=await fetchType('subject');
-  const list=rows.slice(1);
-  subjectCache=list;
+  const allList=rows.slice(1);
   subjectFullMap={};
-  list.forEach(r=>{subjectFullMap[r[0]]=(Number(r[3])||0)+(Number(r[4])||0)+(Number(r[5])||0);});
+  allList.forEach(r=>{subjectFullMap[r[0]]=(Number(r[3])||0)+(Number(r[4])||0)+(Number(r[5])||0);});
+
+  // กรองให้เหลือเฉพาะวิชาที่ครูที่ล็อกอินอยู่ได้รับมอบหมาย (จากชีต "มอบหมายวิชา")
+  // ถ้าไม่พบข้อมูลมอบหมายของครูคนนี้เลย (เช่น ยังไม่ได้นำเข้า หรือเป็นบัญชีที่ไม่ตรงชื่อในไฟล์มอบหมาย) จะแสดงวิชาทั้งหมดแทน กันไม่ให้ใช้งานไม่ได้
+  const user=currentUser();
+  let list=allList;
+  try{
+    const assignRows=await fetchType('assignment');
+    const myName=(user&&user.name||'').replace(/\s+/g,' ').trim();
+    const myCodes=new Set(
+      assignRows.slice(1)
+        .filter(r=>String(r[1]||'').replace(/\s+/g,' ').trim()===myName)
+        .map(r=>r[2])
+    );
+    if(myCodes.size>0){
+      list=allList.filter(r=>myCodes.has(r[0]));
+      const hint=document.getElementById('scSubjectHint');
+      if(hint)hint.textContent=`แสดงเฉพาะวิชาที่ได้รับมอบหมาย (${list.length} วิชา)`;
+    }
+  }catch(err){}
+
+  subjectCache=list;
   const opts='<option value="">— เลือกวิชา —</option>'+list.map(r=>`<option value="${r[0]}" data-name="${r[1]}">${r[1]} (${r[0]})</option>`).join('');
   document.getElementById('scSubject').innerHTML=opts;
 }
