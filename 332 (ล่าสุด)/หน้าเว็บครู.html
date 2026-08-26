@@ -65,6 +65,9 @@ input,select{font-family:var(--font);color:var(--text)}
 .btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent2)}
 .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--border)}
 .btn-sm{padding:5px 11px;font-size:12px}
+.btn-d{background:var(--red-light);color:var(--red);border:1px solid var(--red)}.btn-d:hover{background:var(--red);color:#fff}
+.btn-xs{padding:3px 8px;font-size:11px}
+.hint{font-size:13px;color:var(--text2);margin-bottom:12px}
 .tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
 th{background:var(--surface2);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;font-size:11px;text-transform:uppercase}
@@ -116,6 +119,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <nav class="sb-nav">
       <button class="ni active" data-p="home" onclick="nav('home')"><span class="ni-icon">🏠</span><span>หน้าหลัก</span></button>
+      <button class="ni" data-p="indicator" onclick="nav('indicator')"><span class="ni-icon">🎯</span><span>ตัวชี้วัด</span></button>
       <button class="ni" data-p="score" onclick="nav('score')"><span class="ni-icon">📊</span><span>บันทึกคะแนน</span></button>
       <button class="ni" data-p="attendance" onclick="nav('attendance')"><span class="ni-icon">📅</span><span>เวลาเรียน</span></button>
       <button class="ni" data-p="settings" onclick="nav('settings')"><span class="ni-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
@@ -134,9 +138,67 @@ tr:last-child td{border-bottom:none}
         </div>
         <div class="card-title" style="margin-bottom:12px">⚡ Quick Actions</div>
         <div class="qa-grid">
+          <button class="qa" onclick="nav('indicator')"><span class="qa-icon">🎯</span><span>กำหนดตัวชี้วัด</span></button>
           <button class="qa" onclick="nav('score')"><span class="qa-icon">📊</span><span>กรอกคะแนน</span></button>
           <button class="qa" onclick="nav('attendance')"><span class="qa-icon">📅</span><span>บันทึกเวลาเรียน</span></button>
           <button class="qa" onclick="nav('settings')"><span class="qa-icon">⚙️</span><span>ตั้งค่าการเชื่อมต่อ</span></button>
+        </div>
+      </div>
+
+      <div class="page" id="page-indicator">
+        <div class="card">
+          <div class="card-title">🎯 กำหนดตัวชี้วัดและคะแนนเต็มของวิชา</div>
+          <p class="hint">เลือกวิชาที่ได้รับมอบหมาย แล้วกำหนดตัวชี้วัด (มาตรฐานการเรียนรู้) และคะแนนเต็มของแต่ละข้อได้เอง — คะแนนเก็บของนักเรียนแต่ละคนในวิชานี้จะคำนวณจากผลรวมคะแนนตัวชี้วัดโดยอัตโนมัติ</p>
+          <div class="frow">
+            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="indSubject" onchange="onIndicatorSubjectChange()"><option value="">— เลือกวิชา —</option></select></div>
+          </div>
+          <div class="frow">
+            <div class="fg" style="flex:2"><label class="fl">ชื่อตัวชี้วัด</label><input class="fi" id="indName" placeholder="เช่น ท 1.1 ป.6/1 อ่านออกเสียงบทร้อยแก้ว"></div>
+            <div class="fg"><label class="fl">คะแนนเต็ม</label><input class="fi" id="indFullScore" type="number"></div>
+          </div>
+          <button class="btn btn-p" id="btnIndicator" onclick="addIndicator()">➕ เพิ่มตัวชี้วัด</button>
+          <p class="hint" id="indSumHint" style="margin-top:10px;margin-bottom:0"></p>
+        </div>
+        <div class="card">
+          <div class="card-title">📥 นำเข้าตัวชี้วัดจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: รหัสวิชา, ตัวชี้วัด, คะแนนเต็ม</p>
+          <button class="btn btn-s btn-sm" onclick="downloadIndicatorTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('indCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="indCsvFile" accept=".csv" style="display:none" onchange="importIndicatorsCSV(this)">
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 รายการตัวชี้วัดของวิชานี้</span><button class="btn btn-s btn-sm" onclick="onIndicatorSubjectChange()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>ตัวชี้วัด</th><th>คะแนนเต็ม</th><th>ผู้กำหนด</th><th></th></tr></thead>
+            <tbody id="listIndicator"><tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">เลือกวิชาก่อน</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-title">✏️ บันทึกคะแนนตัวชี้วัดรายนักเรียน</div>
+          <div class="frow">
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="indScStudent"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">ตัวชี้วัด</label><select class="fi" id="indScIndicator"><option value="">— เลือกตัวชี้วัด —</option></select></div>
+            <div class="fg"><label class="fl">คะแนนที่ได้</label><input class="fi" id="indScScore" type="number"></div>
+          </div>
+          <button class="btn btn-p" id="btnIndicatorScore" onclick="submitIndicatorScore()">💾 บันทึกคะแนนตัวชี้วัด</button>
+        </div>
+        <div class="card">
+          <div class="card-title">📥 นำเข้าคะแนนตัวชี้วัดหลายคนจากไฟล์ CSV</div>
+          <p class="hint">คอลัมน์: รหัสนักเรียน, รหัสวิชา, ตัวชี้วัด, คะแนนที่ได้ (ต้องเพิ่มตัวชี้วัดของวิชานั้นไว้ก่อน และชื่อตัวชี้วัดต้องตรงกันทุกตัวอักษร)</p>
+          <button class="btn btn-s btn-sm" onclick="downloadIndicatorScoreTemplate()">📄 ดาวน์โหลดไฟล์ตัวอย่าง</button>
+          <button class="btn btn-p btn-sm" onclick="document.getElementById('indScCsvFile').click()">📥 เลือกไฟล์ CSV</button>
+          <input type="file" id="indScCsvFile" accept=".csv" style="display:none" onchange="importIndicatorScoresCSV(this)">
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between">
+            <span>📄 คะแนนตัวชี้วัดที่บันทึกแล้ว (วิชานี้)</span><button class="btn btn-s btn-sm" onclick="loadIndicatorScoresTable()">🔄 โหลดใหม่</button>
+          </div>
+          <div class="tw"><table>
+            <thead><tr><th>นักเรียน</th><th>ตัวชี้วัด</th><th>คะแนนที่ได้</th></tr></thead>
+            <tbody id="listIndicatorScore"><tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">เลือกวิชาก่อน</td></tr></tbody>
+          </table></div>
         </div>
       </div>
 
@@ -144,13 +206,15 @@ tr:last-child td{border-bottom:none}
         <div class="card">
           <div class="card-title">➕ บันทึกคะแนนรายวิชา</div>
           <div class="frow">
-            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="scStudent"><option value="">— เลือกนักเรียน —</option></select></div>
-            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="scSubject"><option value="">— เลือกวิชา —</option></select>
+            <div class="fg"><label class="fl">นักเรียน</label><select class="fi" id="scStudent" onchange="updateFormativeFromIndicators()"><option value="">— เลือกนักเรียน —</option></select></div>
+            <div class="fg"><label class="fl">รายวิชา</label><select class="fi" id="scSubject" onchange="updateFormativeFromIndicators()"><option value="">— เลือกวิชา —</option></select>
               <div id="scSubjectHint" style="font-size:11.5px;color:var(--text3);margin-top:4px"></div>
             </div>
           </div>
           <div class="frow">
-            <div class="fg"><label class="fl">เก็บคะแนน</label><input class="fi" id="scFormative" type="number"></div>
+            <div class="fg"><label class="fl">เก็บคะแนน</label><input class="fi" id="scFormative" type="number">
+              <div id="scFormativeHint" style="font-size:11.5px;color:var(--text3);margin-top:4px"></div>
+            </div>
             <div class="fg"><label class="fl">กลางภาค</label><input class="fi" id="scMid" type="number"></div>
             <div class="fg"><label class="fl">ปลายภาค</label><input class="fi" id="scFinal" type="number"></div>
           </div>
@@ -306,7 +370,9 @@ var studentCache = [];
 var subjectCache = [];
 var scoreCache = [];
 var attendanceCache = [];
-var PAGE_TITLES = {home:'หน้าหลัก',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
+var indicatorCache = [];
+var indicatorScoreCache = [];
+var PAGE_TITLES = {home:'หน้าหลัก',indicator:'ตัวชี้วัด',score:'บันทึกคะแนน',attendance:'เวลาเรียน',settings:'ตั้งค่าการเชื่อมต่อ'};
 
 function updateDashboard(){
   document.getElementById('stNumScore').textContent=scoreCache.length;
@@ -453,6 +519,7 @@ async function loadStudentOptions(){
   }).join('');
   document.getElementById('scStudent').innerHTML=opts;
   document.getElementById('atStudent').innerHTML=opts;
+  document.getElementById('indScStudent').innerHTML=opts;
   if(list.length===0)toast('ยังไม่มีรายชื่อนักเรียน — แจ้งผู้ดูแลระบบให้เพิ่มก่อน','err');
 }
 async function loadSubjectOptions(){
@@ -483,6 +550,7 @@ async function loadSubjectOptions(){
   subjectCache=list;
   const opts='<option value="">— เลือกวิชา —</option>'+list.map(r=>`<option value="${r[0]}" data-name="${r[1]}">${r[1]} (${r[0]})</option>`).join('');
   document.getElementById('scSubject').innerHTML=opts;
+  document.getElementById('indSubject').innerHTML=opts;
 }
 
 document.getElementById('btnScore').dataset.label='💾 บันทึกคะแนน';
@@ -501,10 +569,163 @@ async function submitScore(){
     fin:document.getElementById('scFinal').value,
     fullTotal:subjectFullMap[sjSel.value]||100};
   if(await postData(data,'btnScore','บันทึกคะแนนแล้ว ✅')){
-    document.getElementById('scFormative').value='';document.getElementById('scMid').value='';document.getElementById('scFinal').value='';
+    document.getElementById('scMid').value='';document.getElementById('scFinal').value='';
+    if(document.getElementById('scFormative').readOnly)updateFormativeFromIndicators();
+    else document.getElementById('scFormative').value='';
     loadScores();
   }
 }
+async function updateFormativeFromIndicators(){
+  const sjSel=document.getElementById('scSubject');
+  const stSel=document.getElementById('scStudent');
+  const hint=document.getElementById('scFormativeHint');
+  const input=document.getElementById('scFormative');
+  if(!sjSel.value){input.readOnly=false;hint.textContent='';return;}
+  const rows=await fetchType('indicator');
+  const subjectIndicators=rows.slice(1).filter(r=>r[1]===sjSel.value);
+  if(subjectIndicators.length===0){input.readOnly=false;hint.textContent='';return;}
+  input.readOnly=true;
+  if(!stSel.value){
+    input.value='';
+    hint.textContent=`วิชานี้ใช้ตัวชี้วัด (${subjectIndicators.length} ข้อ) — เลือกนักเรียนเพื่อคำนวณคะแนนเก็บอัตโนมัติ`;
+    return;
+  }
+  const scoreRows=await fetchType('indicator_score');
+  const mine=scoreRows.slice(1).filter(r=>r[1]===stSel.value&&r[3]===sjSel.value);
+  const sum=mine.reduce((s,r)=>s+(Number(r[6])||0),0);
+  input.value=sum;
+  hint.textContent=`คำนวณจากตัวชี้วัดที่บันทึกแล้ว ${mine.length}/${subjectIndicators.length} ข้อ (รวม ${sum} คะแนน) — ไปแก้ไขที่เมนู "ตัวชี้วัด"`;
+}
+
+// ── ตัวชี้วัด (ครูกำหนดเอง) ──
+async function onIndicatorSubjectChange(){
+  const sel=document.getElementById('indSubject');
+  const code=sel.value;
+  const tbody=document.getElementById('listIndicator');
+  const scIndSel=document.getElementById('indScIndicator');
+  if(!code){
+    tbody.innerHTML='<tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">เลือกวิชาก่อน</td></tr>';
+    scIndSel.innerHTML='<option value="">— เลือกตัวชี้วัด —</option>';
+    document.getElementById('listIndicatorScore').innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">เลือกวิชาก่อน</td></tr>';
+    document.getElementById('indSumHint').textContent='';
+    return;
+  }
+  const rows=await fetchType('indicator');
+  const list=rows.slice(1).filter(r=>r[1]===code);
+  indicatorCache=list;
+  if(list.length===0){
+    tbody.innerHTML='<tr><td colspan="4" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีตัวชี้วัด — เพิ่มด้านบนหรือนำเข้าไฟล์ CSV</td></tr>';
+  }else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[3]??''}</td><td class="tc">${r[4]??''}</td><td>${r[5]??''}</td><td class="tc"><button class="btn btn-d btn-xs" onclick="deleteIndicator('${r[0]}')">🗑️</button></td></tr>`).join('');
+  }
+  const sum=list.reduce((s,r)=>s+(Number(r[4])||0),0);
+  const subjFull=subjectFullMap[code]||0;
+  document.getElementById('indSumHint').textContent=list.length?`รวมคะแนนเต็มของตัวชี้วัดทั้งหมด ${sum} คะแนน (คะแนนเก็บเต็มของวิชานี้ตั้งไว้ ${subjFull} คะแนน)`:'';
+  scIndSel.innerHTML='<option value="">— เลือกตัวชี้วัด —</option>'+list.map(r=>`<option value="${r[0]}" data-full="${r[4]}" data-name="${r[3]}">${r[3]} (เต็ม ${r[4]})</option>`).join('');
+  loadIndicatorScoresTable();
+}
+document.getElementById('btnIndicator').dataset.label='➕ เพิ่มตัวชี้วัด';
+async function addIndicator(){
+  const sel=document.getElementById('indSubject');
+  if(!sel.value){toast('กรุณาเลือกวิชาก่อน','err');return;}
+  const name=document.getElementById('indName').value.trim();
+  const full=document.getElementById('indFullScore').value;
+  if(!name){toast('กรุณากรอกชื่อตัวชี้วัด','err');return;}
+  if(full===''||Number(full)<=0){toast('กรุณากรอกคะแนนเต็มของตัวชี้วัด','err');return;}
+  const data={type:'indicator',
+    subjectCode:sel.value,subjectName:sel.selectedOptions[0].dataset.name,
+    name,fullScore:full,teacher:(currentUser()||{}).name||''};
+  if(await postData(data,'btnIndicator','เพิ่มตัวชี้วัดแล้ว ✅')){
+    document.getElementById('indName').value='';document.getElementById('indFullScore').value='';
+    onIndicatorSubjectChange();
+  }
+}
+async function deleteIndicator(id){
+  if(!confirm('ลบตัวชี้วัดนี้? (คะแนนตัวชี้วัดที่เคยบันทึกไว้ของข้อนี้จะยังอยู่ในระบบ แต่จะไม่ถูกรวมเป็นคะแนนเก็บอีก)'))return;
+  if(await postData({type:'indicator_del',id},null,'ลบตัวชี้วัดแล้ว')){
+    onIndicatorSubjectChange();
+  }
+}
+document.getElementById('btnIndicatorScore').dataset.label='💾 บันทึกคะแนนตัวชี้วัด';
+async function submitIndicatorScore(){
+  const subjSel=document.getElementById('indSubject');
+  const stSel=document.getElementById('indScStudent');
+  const idSel=document.getElementById('indScIndicator');
+  if(!subjSel.value){toast('กรุณาเลือกวิชาก่อน','err');return;}
+  if(!stSel.value){toast('กรุณาเลือกนักเรียน','err');return;}
+  if(!idSel.value){toast('กรุณาเลือกตัวชี้วัด','err');return;}
+  const full=Number(idSel.selectedOptions[0].dataset.full)||0;
+  const score=Number(document.getElementById('indScScore').value)||0;
+  if(score>full){toast(`คะแนนที่ได้ต้องไม่เกินคะแนนเต็ม (${full})`,'err');return;}
+  const data={type:'indicator_score',
+    sid:stSel.value,studentName:stSel.selectedOptions[0].dataset.name,
+    subjectCode:subjSel.value,
+    indicatorId:idSel.value,indicatorName:idSel.selectedOptions[0].dataset.name,
+    score};
+  if(await postData(data,'btnIndicatorScore','บันทึกคะแนนตัวชี้วัดแล้ว ✅')){
+    document.getElementById('indScScore').value='';
+    loadIndicatorScoresTable();
+  }
+}
+async function loadIndicatorScoresTable(){
+  const code=document.getElementById('indSubject').value;
+  const tbody=document.getElementById('listIndicatorScore');
+  if(!code){tbody.innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">เลือกวิชาก่อน</td></tr>';return;}
+  const rows=await fetchType('indicator_score');
+  const list=rows.slice(1).filter(r=>r[3]===code);
+  indicatorScoreCache=list;
+  if(list.length===0){tbody.innerHTML='<tr><td colspan="3" class="tc" style="color:var(--text3);padding:20px">ยังไม่มีข้อมูล</td></tr>';}
+  else{
+    tbody.innerHTML=list.map(r=>`<tr><td>${r[2]??''}</td><td>${r[5]??''}</td><td class="tc">${r[6]??''}</td></tr>`).join('');
+  }
+}
+function downloadIndicatorTemplate(){
+  downloadCSV('ตัวอย่างตัวชี้วัด.csv',
+    ['รหัสวิชา','ตัวชี้วัด','คะแนนเต็ม'],
+    [{'รหัสวิชา':'ท16101','ตัวชี้วัด':'ท 1.1 ป.6/1 อ่านออกเสียงบทร้อยแก้ว','คะแนนเต็ม':10},
+     {'รหัสวิชา':'ท16101','ตัวชี้วัด':'ท 1.1 ป.6/2 อธิบายความหมายของคำ','คะแนนเต็ม':10}]);
+}
+async function importIndicatorsCSV(input){
+  const file=input.files[0];
+  if(subjectCache.length===0){toast('กรุณาโหลดข้อมูลรายวิชาให้ครบก่อนนำเข้า','err');input.value='';return;}
+  await bulkImport(file,(row)=>{
+    const code=row['รหัสวิชา'];
+    const name=row['ตัวชี้วัด'];
+    if(!code||!name)return null;
+    const subject=subjectCache.find(r=>r[0]===code);
+    if(!subject)return null;
+    return {type:'indicator',subjectCode:code,subjectName:subject[1]||'',name,fullScore:row['คะแนนเต็ม']||0,teacher:(currentUser()||{}).name||''};
+  },()=>onIndicatorSubjectChange());
+  input.value='';
+}
+function downloadIndicatorScoreTemplate(){
+  downloadCSV('ตัวอย่างคะแนนตัวชี้วัด.csv',
+    ['รหัสนักเรียน','รหัสวิชา','ตัวชี้วัด','คะแนนที่ได้'],
+    [{'รหัสนักเรียน':'12345','รหัสวิชา':'ท16101','ตัวชี้วัด':'ท 1.1 ป.6/1 อ่านออกเสียงบทร้อยแก้ว','คะแนนที่ได้':9},
+     {'รหัสนักเรียน':'12346','รหัสวิชา':'ท16101','ตัวชี้วัด':'ท 1.1 ป.6/1 อ่านออกเสียงบทร้อยแก้ว','คะแนนที่ได้':8}]);
+}
+async function importIndicatorScoresCSV(input){
+  const file=input.files[0];
+  if(studentCache.length===0){toast('กรุณาโหลดข้อมูลนักเรียนให้ครบก่อนนำเข้า','err');input.value='';return;}
+  const allIndicators=await fetchType('indicator');
+  const indList=allIndicators.slice(1);
+  await bulkImport(file,(row)=>{
+    const sid=row['รหัสนักเรียน'];
+    const code=row['รหัสวิชา'];
+    const indName=row['ตัวชี้วัด'];
+    if(!sid||!code||!indName)return null;
+    const student=studentCache.find(r=>r[1]===sid);
+    const indicator=indList.find(r=>r[1]===code&&r[3]===indName);
+    if(!student||!indicator)return null;
+    return {type:'indicator_score',
+      sid,studentName:(student[4]||'')+' '+(student[5]||''),
+      subjectCode:code,
+      indicatorId:indicator[0],indicatorName:indicator[3],
+      score:row['คะแนนที่ได้']||0};
+  },()=>loadIndicatorScoresTable());
+  input.value='';
+}
+
 async function loadScores(){
   const rows=await fetchType('score');
   const list=rows.slice(1);

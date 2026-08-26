@@ -1,5 +1,5 @@
 // วางโค้ดนี้ใน Apps Script ของชีต "ปพ.5" (Extensions > Apps Script) แทนโค้ดเดิมทั้งหมด
-// สคริปต์นี้จะสร้างชีตย่อยให้อัตโนมัติเมื่อบันทึกข้อมูลครั้งแรก: นักเรียน, รายวิชา, คะแนน, เวลาเรียน, ครู, ชั้นเรียน, วันหยุด, ตั้งค่า
+// สคริปต์นี้จะสร้างชีตย่อยให้อัตโนมัติเมื่อบันทึกข้อมูลครั้งแรก: นักเรียน, รายวิชา, คะแนน, เวลาเรียน, ครู, ชั้นเรียน, วันหยุด, มอบหมายวิชา, ตัวชี้วัด, คะแนนตัวชี้วัด, ตั้งค่า
 
 var SHEETS = {
   student: 'นักเรียน',
@@ -9,7 +9,9 @@ var SHEETS = {
   teacher: 'ครู',
   class: 'ชั้นเรียน',
   holiday: 'วันหยุด',
-  assignment: 'มอบหมายวิชา'
+  assignment: 'มอบหมายวิชา',
+  indicator: 'ตัวชี้วัด',
+  indicator_score: 'คะแนนตัวชี้วัด'
 };
 
 var HEADERS = {
@@ -20,7 +22,9 @@ var HEADERS = {
   ครู: ['รหัส','ชื่อ-สกุล','ตำแหน่ง','บันทึกเมื่อ'],
   ชั้นเรียน: ['รหัส','ชื่อชั้น','ครูประจำชั้น','บันทึกเมื่อ'],
   วันหยุด: ['รหัส','วันที่','ชื่อวันหยุด','ประเภท','บันทึกเมื่อ'],
-  'มอบหมายวิชา': ['รหัส','ครูผู้สอน','รหัสวิชา','ชื่อวิชา','ระดับชั้น/ห้อง','ภาคเรียน','กลุ่มสาระ','หมายเหตุ','บันทึกเมื่อ']
+  'มอบหมายวิชา': ['รหัส','ครูผู้สอน','รหัสวิชา','ชื่อวิชา','ระดับชั้น/ห้อง','ภาคเรียน','กลุ่มสาระ','หมายเหตุ','บันทึกเมื่อ'],
+  'ตัวชี้วัด': ['รหัส','รหัสวิชา','ชื่อวิชา','ตัวชี้วัด','คะแนนเต็ม','ผู้กำหนด','บันทึกเมื่อ'],
+  'คะแนนตัวชี้วัด': ['รหัส','รหัสนักเรียน','ชื่อ-สกุล','รหัสวิชา','รหัสตัวชี้วัด','ตัวชี้วัด','คะแนนที่ได้','บันทึกเมื่อ']
 };
 
 // ── ชีตผู้ใช้งาน (ชื่อ+รหัสผ่านสำหรับล็อกอิน) ──
@@ -153,6 +157,24 @@ function doPost(e) {
   } else if (type === 'score') {
     var sh = getOrCreateSheet_(SHEETS.score);
     var formative = Number(data.formative) || 0;
+    // ถ้าวิชานี้มีการกำหนดตัวชี้วัดไว้ (โดยครู) ให้คำนวณ "เก็บคะแนน" จากผลรวมคะแนนตัวชี้วัดของนักเรียนคนนี้แทนค่าที่ส่งมาจากฟอร์มเสมอ
+    var indicatorSheet = getOrCreateSheet_(SHEETS.indicator);
+    var indicatorValues = indicatorSheet.getDataRange().getValues();
+    var hasIndicators = false;
+    for (var ii = 1; ii < indicatorValues.length; ii++) {
+      if (indicatorValues[ii][1] === data.subjectCode) { hasIndicators = true; break; }
+    }
+    if (hasIndicators) {
+      var indScoreSheet = getOrCreateSheet_(SHEETS.indicator_score);
+      var indScoreValues = indScoreSheet.getDataRange().getValues();
+      var sum = 0;
+      for (var jj = 1; jj < indScoreValues.length; jj++) {
+        if (indScoreValues[jj][1] === data.sid && indScoreValues[jj][3] === data.subjectCode) {
+          sum += Number(indScoreValues[jj][6]) || 0;
+        }
+      }
+      formative = sum;
+    }
     var mid = Number(data.mid) || 0;
     var fin = Number(data.fin) || 0;
     var total = formative + mid + fin;
@@ -163,6 +185,35 @@ function doPost(e) {
       data.sid || '', data.studentName || '', data.subjectCode || '', data.subjectName || '',
       formative, mid, fin, total, gr, new Date()
     ]);
+  } else if (type === 'indicator') {
+    var sh = getOrCreateSheet_(SHEETS.indicator);
+    sh.appendRow([
+      newId_(), data.subjectCode || '', data.subjectName || '', data.name || '',
+      Number(data.fullScore) || 0, data.teacher || '', new Date()
+    ]);
+  } else if (type === 'indicator_del') {
+    deleteRowById_(SHEETS.indicator, data.id);
+  } else if (type === 'indicator_score') {
+    var sh = getOrCreateSheet_(SHEETS.indicator_score);
+    var values = sh.getDataRange().getValues();
+    var sid = data.sid || '';
+    var indicatorId = data.indicatorId || '';
+    var row = [
+      newId_(), sid, data.studentName || '', data.subjectCode || '',
+      indicatorId, data.indicatorName || '', Number(data.score) || 0, new Date()
+    ];
+    var found = -1;
+    for (var kk = 1; kk < values.length; kk++) {
+      if (values[kk][1] === sid && values[kk][4] === indicatorId) { found = kk; break; }
+    }
+    if (found >= 0) {
+      row[0] = values[found][0];
+      sh.getRange(found + 1, 1, 1, row.length).setValues([row]);
+    } else {
+      sh.appendRow(row);
+    }
+  } else if (type === 'indicator_score_del') {
+    deleteRowById_(SHEETS.indicator_score, data.id);
   } else if (type === 'attendance') {
     var sh = getOrCreateSheet_(SHEETS.attendance);
     sh.appendRow([
