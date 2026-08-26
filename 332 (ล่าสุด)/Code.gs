@@ -51,6 +51,14 @@ function normalize_(s) {
   return String(s || '').replace(/\s+/g, ' ').trim();
 }
 
+// คอลัมน์ "วันที่" (1-based) ของแต่ละชีตที่เก็บวันที่เป็นข้อความ YYYY-MM-DD
+// ต้องบังคับรูปแบบเซลล์เป็นข้อความล้วนเสมอ ไม่งั้น Google Sheets จะแปลงเป็นวันที่จริงอัตโนมัติ
+// แล้วพอ getValues() อ่านกลับมาเป็น JSON จะกลายเป็น ISO datetime ที่เลื่อนวันตาม timezone ของสเปรดชีต (เช่น "2026-08-03" กลายเป็น "2026-08-02T17:00:00.000Z")
+var DATE_TEXT_COLUMNS = {
+  'วันหยุด': 2,
+  'เวลาเรียนรายวัน': 5
+};
+
 function getOrCreateSheet_(name) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name);
@@ -59,6 +67,9 @@ function getOrCreateSheet_(name) {
     sheet.appendRow(HEADERS[name]);
   } else if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS[name]);
+  }
+  if (DATE_TEXT_COLUMNS[name]) {
+    sheet.getRange(1, DATE_TEXT_COLUMNS[name], sheet.getMaxRows(), 1).setNumberFormat('@');
   }
   return sheet;
 }
@@ -251,6 +262,8 @@ function doPost(e) {
     if (newRows.length > 0) {
       sh.getRange(sh.getLastRow() + 1, 1, newRows.length, headerLen).setValues(newRows);
     }
+  } else if (type === 'daily_attendance_del') {
+    deleteRowById_(SHEETS.daily_attendance, data.id);
   } else if (type === 'teacher') {
     var sh = getOrCreateSheet_(SHEETS.teacher);
     sh.appendRow([newId_(), data.name || '', data.role || '', new Date()]);
