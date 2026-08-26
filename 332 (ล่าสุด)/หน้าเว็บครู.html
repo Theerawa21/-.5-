@@ -363,14 +363,20 @@ async function postData(payload,btnId,okMsg){
   if(btn){btn.disabled=false;btn.textContent=btn.dataset.label;}
   return ok;
 }
-async function fetchType(type){
+async function fetchType(type,retries){
   const url=getUrl();
   if(!url)return [];
+  if(retries===undefined)retries=2;
   try{
     const res=await fetch(url+'?type='+type);
     const rows=await res.json();
-    return Array.isArray(rows)?rows:[];
-  }catch(err){return [];}
+    if(Array.isArray(rows))return rows;
+    if(retries>0){await new Promise(r=>setTimeout(r,500));return fetchType(type,retries-1);}
+    return [];
+  }catch(err){
+    if(retries>0){await new Promise(r=>setTimeout(r,500));return fetchType(type,retries-1);}
+    return [];
+  }
 }
 async function loadSchoolLogo(){
   try{
