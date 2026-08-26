@@ -410,7 +410,7 @@ function nav(p){
   document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('active',pg.id==='page-'+p));
   document.getElementById('pgTitle').textContent=PAGE_TITLES[p];
 }
-var DEFAULT_WEB_APP_URL='https://script.google.com/macros/s/AKfycbwl_2_lilWex11xW1KPiHx5kUBom072DIaRN0UCQIGa7XQ5e8n3rGRB8m2H70hXStLx/exec';
+var DEFAULT_WEB_APP_URL='https://script.google.com/macros/s/AKfycbwDXOgWGqWpdUOfxH_3R7WwvkQ8S_wpArHZDcv3NAvmODn0CY5IeFFlLI6Ep3TEqJQW/exec';
 function getUrl(){return localStorage.getItem('sf_url')||DEFAULT_WEB_APP_URL;}
 function saveUrl(){
   const u=document.getElementById('scriptUrl').value.trim();
