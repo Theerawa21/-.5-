@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>LikhitTH</title>
+<title>Saint Theresa</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -828,7 +828,7 @@ tr.drag-over{border-top:2px solid var(--accent);background:var(--accent-light)!i
     <div class="sb-logo" id="sbLogo">🏫</div>
     <div style="overflow:hidden;flex:1">
       <div class="sb-name" id="sbName">ยังไม่ตั้งค่าโรงเรียน</div>
-      <div class="sb-brand">LikhitTH</div>
+      <div class="sb-brand">Saint Theresa</div>
     </div>
   </div>
   <div class="sb-cls" id="yearSelWrap" style="display:none">
@@ -981,11 +981,11 @@ tr.drag-over{border-top:2px solid var(--accent);background:var(--accent-light)!i
 <!-- ════ AUTH GATE (login/signup/offline) — sibling ของ #app เหมือน modal ════ -->
 <div class="mo" id="authGate">
   <div class="mb" style="max-width:380px;">
-    <div class="mh"><span class="mt">🔐 LikhitTH v3</span></div>
+    <div class="mh"><span class="mt">🔐 Saint Theresa v3</span></div>
     <div class="mbody">
       <div id="agLoading" style="text-align:center;padding:20px 0;color:var(--text2);">กำลังตรวจสอบสถานะเข้าสู่ระบบ...</div>
       <div id="agChoice" style="display:none;">
-        <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;text-align:center;">เลือกวิธีใช้งาน LikhitTH v3</p>
+        <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px;text-align:center;">เลือกวิธีใช้งาน Saint Theresa v3</p>
         <button class="btn btn-p" onclick="agStartWizard()" style="width:100%;padding:16px;box-shadow:var(--sh);">
           <span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;">
             <span style="font-size:16px;font-weight:700;">☁️ สร้างระบบฐานข้อมูลออนไลน์</span>
@@ -1362,10 +1362,10 @@ tr.drag-over{border-top:2px solid var(--accent);background:var(--accent-light)!i
 
 <div class="mo" id="mDev">
   <div class="mb" style="max-width:400px">
-    <div class="mh"><span class="mt">เกี่ยวกับ LikhitTH</span><button class="mc" onclick="CM('mDev')">✕</button></div>
+    <div class="mh"><span class="mt">เกี่ยวกับ Saint Theresa</span><button class="mc" onclick="CM('mDev')">✕</button></div>
     <div class="mbody" style="text-align:center;padding:28px">
       <div style="font-size:48px;margin-bottom:12px">📝</div>
-      <div style="font-family:var(--serif);font-size:22px;font-weight:700;margin-bottom:4px">LikhitTH v3.32</div>
+      <div style="font-family:var(--serif);font-size:22px;font-weight:700;margin-bottom:4px">Saint Theresa v3.32</div>
       <div style="color:var(--text3);font-size:13px;margin-bottom:20px">ระบบบันทึกพัฒนาคุณภาพผู้เรียน</div>
       <div style="background:var(--surface2);border-radius:10px;padding:16px;text-align:left;font-size:13px;line-height:2.2">
         <div>👨‍💻 <b>พัฒนาโดย:</b> นายศักรินทร์ ศิรินัย</div>
@@ -1386,7 +1386,7 @@ tr.drag-over{border-top:2px solid var(--accent);background:var(--accent-light)!i
 <script>
 
 // ═══════════════════════════════════════════════
-//   LikhitTH v3 — Offline School Record System
+//   Saint Theresa v3 — Offline School Record System
 //   พัฒนาโดย นายศักรินทร์ ศิรินัย
 //   Powered by Claude Sonnet — Anthropic
 // ═══════════════════════════════════════════════
@@ -6705,7 +6705,7 @@ function renderBackup(){
           ondrop="event.preventDefault();this.classList.remove('dov');doRestore({files:[event.dataTransfer.files[0]]})">
           <div style="font-size:36px;margin-bottom:8px">📂</div>
           <div style="font-size:13.5px;font-weight:600">คลิกหรือลากไฟล์ .json มาที่นี่</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:4px">รองรับ LikhitTH backup v2 และ v3</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:4px">รองรับ Saint Theresa backup v2 และ v3</div>
         </div>
       </div>`:''}
     </div>
@@ -6749,7 +6749,7 @@ function doBackup(){
   });
   const date=new Date().toISOString().slice(0,10);
   const blob=new Blob([JSON.stringify(bk,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`LikhitTH_backup_${date}.json`;a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Saint Theresa_backup_${date}.json`;a.click();
   toast('สำรองข้อมูลแล้ว','ok');
 }
 
@@ -10026,7 +10026,7 @@ function downloadBakedApp(){
     const baked=html.replace(marker,replacement);
     const blob=new Blob([baked],{type:'text/html'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download='LikhitTH_'+(SC().name?stripTags(SC().name).replace(/\s+/g,'_'):'school')+'.html';
+    a.download='Saint Theresa_'+(SC().name?stripTags(SC().name).replace(/\s+/g,'_'):'school')+'.html';
     a.click();
     toast('ดาวน์โหลดไฟล์สำเร็จ! ใช้ไฟล์นี้แทนต่อไปทุกเครื่อง ไม่ต้องวาง config ซ้ำอีก','ok');
   };
@@ -10178,8 +10178,8 @@ const AG_WIZ_STEPS=[
     ${agMock(`⚙️ Settings ▾<br><span style="padding-left:12px;display:block;">General<br>Usage and billing<br>Integrations<br>...</span>`)}
     <p>เลื่อนลงหา "Your apps" → กดไอคอน <code>&lt;/&gt;</code> (Web — ไม่ใช่ iOS/Android)</p>
     ${agMock(`Your apps: <i>There are no apps in your project</i><br><span style="background:var(--accent);color:#fff;border-radius:50%;padding:4px 9px;font-weight:600;display:inline-block;margin-top:6px;">&lt;/&gt;</span> ← กดตัวนี้`)}
-    <p>ตั้งชื่อแอปอะไรก็ได้ (เช่น LikhitTH) → ช่อง "Also set up Firebase Hosting" <b>ปล่อยว่าง ไม่ต้องติ๊ก</b> → กด <b>"Register app"</b></p>
-    ${agMock(`App nickname: <b>LikhitTH</b><br>☐ Also set up Firebase Hosting<br>
+    <p>ตั้งชื่อแอปอะไรก็ได้ (เช่น Saint Theresa) → ช่อง "Also set up Firebase Hosting" <b>ปล่อยว่าง ไม่ต้องติ๊ก</b> → กด <b>"Register app"</b></p>
+    ${agMock(`App nickname: <b>Saint Theresa</b><br>☐ Also set up Firebase Hosting<br>
       <span style="background:var(--accent);color:#fff;border-radius:14px;padding:4px 14px;font-weight:600;display:inline-block;margin-top:6px;">Register app</span>`)}
     <p>จะเห็นกล่องโค้ดยาวๆ (มี import, const firebaseConfig, initializeApp) → กดไอคอนคัดลอก 📋 ที่มุมกล่องโค้ด <b>คัดลอกทั้งก้อนไปเลย ไม่ต้องเลือกเฉพาะส่วน</b> (ขั้นถัดไปจะดึงส่วนที่ใช้ออกมาเอง)</p>`},
   {title:'7. วาง config ที่นี่',body:()=>`
