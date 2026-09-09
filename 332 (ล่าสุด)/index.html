@@ -8099,7 +8099,121 @@ function bkBuildCover(ctx){
 // ── buildAttendance ───────────────────────────────────────────────
 // Portrait A4: หน้าแรก 3 สัปดาห์, หน้าถัดไป 5 สัปดาห์
 // วันหยุดราชการแสดงเป็นช่องแคบสีเทา ข้อมูลตรงกับในแอป
+
+function bkSaintAttendanceModel(sj,term){
+ const students=getSts(),data=ld(CK('attendance_'+sj.id),{}),sc=SC();
+ const start=str2date(sc['term'+term+'Start']),end=str2date(sc['term'+term+'End']);
+ const valid=!!(start&&end&&end>=start&&(end-start)/86400000<370),full=Number(sjHours(sj))||0;
+ const marks=['/','ป','ล','ข'],weeks=[],summaries={};
+ const value=(s,d)=>data[s.id]?.[bkPad2(d.getMonth()+1)]?.[d.getDate()];
+ const anyMark=d=>students.some(s=>marks.includes(value(s,d)));
+ if(valid){
+  const monday=new Date(start);monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
+  for(let cursor=new Date(monday);cursor<=end;cursor.setDate(cursor.getDate()+7)){
+   const days=[];
+   for(let i=0;i<7;i++){
+    const d=new Date(cursor);d.setDate(d.getDate()+i);
+    const inside=d>=start&&d<=end;
+    if(i>=5&&!(inside&&(isSpecial(d)||anyMark(d))))continue;
+    const school=inside&&(isSchoolDay(d)||isSpecial(d)||(i>=5&&anyMark(d)));
+    const open=school&&(sjIsScheduledDay(sj,d.getDay())||anyMark(d));
+    days.push({date:d,inside,open,periods:open?(Number(sjSchedPeriods(sj,d.getDay()))||1):0});
+   }
+   weeks.push({number:weeks.length+1,days});
+  }
+ }
+ while(weeks.length<20)weeks.push({number:weeks.length+1,days:Array.from({length:5},()=>({date:null,inside:false,open:false,periods:0}))});
+ students.forEach(s=>{
+  let present=0,recorded=0,missing=0;
+  weeks.forEach(w=>w.days.forEach(day=>{
+   if(!day.open)return;const mark=value(s,day.date);
+   if(mark==='/')present+=day.periods;
+   if(marks.includes(mark))recorded++;
+   else if(mark!=='-')missing++;
+  }));
+  const result=!valid||full<=0?'':present>=full*.8?'ผ่าน':recorded>0&&missing===0?'ไม่ผ่าน':'';
+  summaries[s.id]={present,recorded,missing,result};
+ });
+ return {students,data,weeks,summaries,valid,full,threshold:full*.8};
+}
+function bkSaintBuildAttendance(ctx,sj,term,def=''){
+ const m=bkSaintAttendanceModel(sj,term),groups=[];
+ groups.push({kind:'first',weeks:m.weeks.slice(0,5)});
+ const middle=m.weeks.slice(5,-5);
+ for(let i=0;i<middle.length;i+=10)groups.push({kind:'middle',weeks:middle.slice(i,i+10)});
+ groups.push({kind:'last',weeks:m.weeks.slice(-5)});
+ const sets=Math.max(1,Math.ceil(m.students.length/54));
+ const css=`<style>
+ .a4-page.st-att-page{box-sizing:border-box;padding:8mm 6mm;height:297mm;min-height:297mm;background:#fff;color:#000;font-family:'TH Sarabun PSK','Sarabun',sans-serif;display:flex;flex-direction:column}
+ .st-att-head{display:flex;align-items:center;justify-content:space-between;gap:2mm;min-height:9mm;margin-bottom:1.5mm}
+ .st-att-title{font-size:14pt;font-weight:700;line-height:1.15;min-width:0;flex:1}
+ .st-att-sub{font-size:10pt;font-weight:400;margin-top:1mm}
+ .st-att-threshold{width:49mm;flex-shrink:0;text-align:right;font-size:11pt;line-height:1.15}
+ .st-att-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12pt}
+ .st-att-table th,.st-att-table td{border:.6px solid #333;text-align:center;vertical-align:middle;padding:0 .2mm;line-height:1}
+ .st-att-table thead tr{height:4.8mm}
+ .st-att-table thead th{font-size:10pt;font-weight:400;height:4.8mm}
+ .st-att-table tbody tr,.st-att-table tbody td{height:4.4mm}
+ .st-att-table .st-att-name{text-align:left;padding-left:1mm;font-size:11pt;white-space:nowrap}
+ .st-att-table .st-att-id{font-size:9pt;white-space:nowrap}
+ .st-att-table .st-att-label{font-size:8pt}
+ .st-att-table .st-att-date{font-size:8pt}
+ .st-att-table .st-att-off{background:#f0f0f0}
+ .st-att-table .st-week-end{border-right:1.2px solid #222}
+ .st-att-table .st-att-result{font-family:Arial,sans-serif;font-size:10pt}
+ .st-att-table tr:nth-child(5n) td{border-bottom:1px solid #333}
+ .st-att-foot{display:flex;justify-content:space-between;gap:2mm;font-size:9pt;line-height:1.15;margin-top:1.5mm}
+ </style>`;
+ let html='';
+ for(let set=0;set<sets;set++){
+  const sts=m.students.slice(set*54,set*54+54);
+  groups.forEach((group,gi)=>{
+   const first=group.kind==='first',last=group.kind==='last';
+   const cols=group.weeks.flatMap(w=>w.days.map((d,i)=>({...d,weekEnd:i===w.days.length-1})));
+   const widths=first?'<col style="width:6mm"><col style="width:10mm"><col style="width:26mm"><col style="width:46mm">':'<col style="width:6mm">';
+   const cg=`<colgroup>${widths}<col style="width:6mm">${cols.map(()=>'<col>').join('')}${last?'<col style="width:24mm"><col style="width:17mm"><col style="width:17mm"><col style="width:6mm">':''}</colgroup>`;
+   const identity=`<th rowspan="4">เลขที่</th>${first?'<th rowspan="4">เลข<br>ประจำตัว</th><th rowspan="4">เลขประจำตัว<br>ประชาชน</th><th rowspan="4">ชื่อ–นามสกุล</th>':''}`;
+   const endHead=last?'<th rowspan="4">รวมเวลาเรียน<br>(ชั่วโมง)</th><th colspan="2" rowspan="3">ผลการประเมิน<br>เวลาเรียน</th><th rowspan="4">เลขที่</th>':'';
+   const month=w=>{
+    const names=[...new Set(w.days.filter(d=>d.date&&d.inside).map(d=>BK_MO_NAMES[bkPad2(d.date.getMonth()+1)]||''))];
+    return names.map(bkEsc).join(' / ');
+   };
+   const head=`<thead><tr>${identity}<th class="st-att-label">เดือน</th>${group.weeks.map(w=>`<th colspan="${w.days.length}" class="st-week-end">${month(w)}</th>`).join('')}${endHead}</tr>
+    <tr><th class="st-att-label">สัปดาห์</th>${group.weeks.map(w=>`<th colspan="${w.days.length}" class="st-week-end">${w.number}</th>`).join('')}</tr>
+    <tr><th class="st-att-label">วันที่</th>${cols.map(d=>`<th class="st-att-date ${d.weekEnd?'st-week-end':''}">${d.date&&d.inside?d.date.getDate():''}</th>`).join('')}</tr>
+    <tr><th class="st-att-label">ชั่วโมง</th>${cols.map(d=>`<th class="${d.weekEnd?'st-week-end':''}">${d.open?d.periods:''}</th>`).join('')}${last?'<th>ผ่าน</th><th>ไม่ผ่าน</th>':''}</tr></thead>`;
+   let body='';
+   for(let i=0;i<54;i++){
+    const st=sts[i],num=st?(st.no||set*54+i+1):set*54+i+1;
+    let row=`<td>${bkEsc(num)}</td>`;
+    if(first)row+=`<td class="st-att-id">${bkEsc(st?.sid||'')}</td><td class="st-att-id">${bkEsc(st?.cid||'')}</td><td class="st-att-name">${st?bkEsc((st.prefix||'')+(st.fname||'')+' '+(st.lname||'')):''}</td>`;
+    row+='<td></td>';
+    row+=cols.map(d=>{
+     const stored=st&&d.date?m.data[st.id]?.[bkPad2(d.date.getMonth()+1)]?.[d.date.getDate()]:'';
+     const mark=!st||!d.open?'':stored||def;
+     return `<td class="${d.weekEnd?'st-week-end ':''}${d.date&&d.inside&&!d.open?'st-att-off':''}">${bkEsc(mark)}</td>`;
+    }).join('');
+    if(last){
+     const sum=st?m.summaries[st.id]:null;
+     row+=`<td>${sum&&sum.recorded?sum.present:''}</td><td class="st-att-result">${sum?.result==='ผ่าน'?'&#10003;':''}</td><td class="st-att-result">${sum?.result==='ไม่ผ่าน'?'&#10003;':''}</td><td>${bkEsc(num)}</td>`;
+    }
+    body+=`<tr>${row}</tr>`;
+   }
+   const pending=sts.filter(s=>!m.summaries[s.id].result).length;
+   const note=!m.valid?'ยังไม่ตั้งวันเปิด–ปิดภาคเรียน: เว้นวันที่และผลประเมิน':last&&pending?'รอข้อมูล/ผลประเมิน '+pending+' คน':def==='/'?'เครื่องหมาย / ที่เติมอัตโนมัติไม่นำมาสรุปเวลาเรียน':'';
+   html+=`<div class="a4-page st-att-page">${css}<div class="st-att-head"><div class="st-att-title">แบบบันทึกเวลาเรียน รหัสวิชา ${bkEsc(sj.code||'................')} รายวิชา ${bkEsc(sj.name||'................')}
+    <div class="st-att-sub">${bkEsc(ctx.level)} ${bkEsc(ctx.roomStr||'')} · ภาคเรียนที่ ${bkEsc(term)} ปีการศึกษา ${bkEsc(ctx.year)}${sets>1?' · ชุดรายชื่อ '+(set+1)+'/'+sets:''}</div></div>
+    ${last?`<div class="st-att-threshold">เวลาเรียนตลอดรายวิชาร้อยละ 80<br>คิดเป็นเวลา ${m.full>0?Number(m.threshold.toFixed(2)):'..........'} ชั่วโมง</div>`:''}</div>
+    <table class="st-att-table">${cg}${head}<tbody>${body}</tbody></table>
+    <div class="st-att-foot"><span>${bkEsc(note)}</span><span>หน้า ${gi+1}/${groups.length} · สัปดาห์ ${group.weeks[0].number}–${group.weeks[group.weeks.length-1].number}</span></div></div>`;
+  });
+ }
+ return html;
+}
+
+
 function bkBuildAttendance(ctx,startMo,totalWeeks,firstW,midW,def,sj,term){
+  if(sj&&term&&!isVoc())return bkSaintBuildAttendance(ctx,sj,term,def);
   const dowTH=['อา','จ','อ','พ','พฤ','ศ','ส'];
   // มัธยม (มี sj): ดึงเวลาเรียนของวิชานั้น / ประถม: กองกลาง
   const attData=ld(sj?CK('attendance_'+sj.id):CK('attendance'),{});
@@ -9448,7 +9562,7 @@ function renderPP5CenterSec(){
 
         ${toggleItem('bk_inc_cover','📄 หน้าปก ปพ.5 (per-วิชา)','สรุปผลการเรียนรายวิชา + ตารางเกรด + ช่องเซ็น',true)}
         ${toggleItem('bk_inc_students','👥 รายชื่อนักเรียน',`ตาราง 32 แถว/หน้า · ${sts.length} คน`,true)}
-        ${toggleItem('bk_inc_att','📅 แบบบันทึกเวลาเรียน (แยกรายวิชา)','ดึงเวลาเรียนของแต่ละวิชาจากหน้า "เวลาเรียน" — หัวกระดาษระบุชื่อวิชา',true,`
+        ${toggleItem('bk_inc_att','📅 แบบบันทึกเวลาเรียน (แยกรายวิชา)','แบบฟอร์มรายวิชา: รายชื่อ + สัปดาห์ 1–5 / 6–15 / 16–20 และสรุปเกณฑ์ 80% · 54 แถวต่อชุด',true,`
           <div style="margin-top:8px;padding:8px 10px;background:var(--accent-light);border-radius:8px;border:1px solid var(--accent);font-size:12px;color:var(--accent);">
             ✅ ระบบดึงช่วงเทอมและวันหยุดจากตั้งค่าโรงเรียนให้อัตโนมัติ<br>
             <span style="color:var(--text2);">
@@ -9462,7 +9576,7 @@ function renderPP5CenterSec(){
             </label>
             <select id="bk_att_def" class="fi" style="font-size:13px;padding:6px 8px;width:100%;">
               <option value="/">/ (มา) — ถือว่ามาเรียนถ้ายังไม่ได้กรอก</option>
-              <option value="">เว้นว่าง — ให้ช่องว่างถ้ายังไม่ได้กรอก</option>
+              <option value="" ${!isVoc()?'selected':''}>เว้นว่าง — ให้ช่องว่างถ้ายังไม่ได้กรอก</option>
             </select>
             <div style="font-size:11px;color:var(--text3);margin-top:4px;">💡 วันที่วิชานี้ไม่มีคาบเรียน ให้กดปุ่ม "🚫 ไม่มีคาบ" ในหน้าเวลาเรียน (หรือคลิกเลขวันวนไปสถานะ "-") — จะไม่ถูกนับเป็นวันเรียนเสมอ ไม่ขึ้นกับค่าเริ่มต้นด้านบน</div>
           </div>`)}
@@ -9585,21 +9699,10 @@ function bkGetSelectedSjs(){
 // ── bkBuildCoverSecPerSubject: ปก per-วิชา ───────────────────────
 
 function bkSaintAttendanceSummary(sj,term){
- const sts=getSts(),r=termRange(term),full=Number(sjHours(sj));
- if(!r||!r.end||r.end<r.start||!Number.isFinite(full)||full<=0)return null;
- const data=ld(CK('attendance_'+sj.id),{}),days=[],marks=['/','ป','ล','ข'];
- for(let d=new Date(r.start),i=0;d<=r.end&&i<370;d.setDate(d.getDate()+1),i++){
-  if(!(isSchoolDay(d)||isSpecial(d)))continue;
-  if(!sjIsScheduledDay(sj,d.getDay())&&!sts.some(s=>marks.includes(data[s.id]?.[bkPad2(d.getMonth()+1)]?.[d.getDate()])))continue;
-  days.push(new Date(d));
- }
- if(!days.length)return null;
+ const m=bkSaintAttendanceModel(sj,term);
+ if(!m.valid||m.full<=0)return null;
  let passed=0,pending=0;const failed=[];
- sts.forEach((s,i)=>{
-  let hours=0,missing=false;
-  days.forEach(d=>{const v=data[s.id]?.[bkPad2(d.getMonth()+1)]?.[d.getDate()];if(v==='/')hours+=Number(sjSchedPeriods(sj,d.getDay()))||0;if(!marks.includes(v))missing=true;});
-  if(hours>=full*.8)passed++;else if(missing)pending++;else failed.push(i+1);
- });
+ m.students.forEach((s,i)=>{const r=m.summaries[s.id].result;if(r==='ผ่าน')passed++;else if(r==='ไม่ผ่าน')failed.push(s.no||i+1);else pending++;});
  return {passed,pending,failed};
 }
 function bkSaintSecondaryCover(ctx,sj,row,total){
