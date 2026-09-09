@@ -9583,6 +9583,99 @@ function bkGetSelectedSjs(){
 }
 
 // ── bkBuildCoverSecPerSubject: ปก per-วิชา ───────────────────────
+
+function bkSaintAttendanceSummary(sj,term){
+ const sts=getSts(),r=termRange(term),full=Number(sjHours(sj));
+ if(!r||!r.end||r.end<r.start||!Number.isFinite(full)||full<=0)return null;
+ const data=ld(CK('attendance_'+sj.id),{}),days=[],marks=['/','ป','ล','ข'];
+ for(let d=new Date(r.start),i=0;d<=r.end&&i<370;d.setDate(d.getDate()+1),i++){
+  if(!(isSchoolDay(d)||isSpecial(d)))continue;
+  if(!sjIsScheduledDay(sj,d.getDay())&&!sts.some(s=>marks.includes(data[s.id]?.[bkPad2(d.getMonth()+1)]?.[d.getDate()])))continue;
+  days.push(new Date(d));
+ }
+ if(!days.length)return null;
+ let passed=0,pending=0;const failed=[];
+ sts.forEach((s,i)=>{
+  let hours=0,missing=false;
+  days.forEach(d=>{const v=data[s.id]?.[bkPad2(d.getMonth()+1)]?.[d.getDate()];if(v==='/')hours+=Number(sjSchedPeriods(sj,d.getDay()))||0;if(!marks.includes(v))missing=true;});
+  if(hours>=full*.8)passed++;else if(missing)pending++;else failed.push(i+1);
+ });
+ return {passed,pending,failed};
+}
+function bkSaintSecondaryCover(ctx,sj,row,total){
+ const sc=SC(),att=bkSaintAttendanceSummary(sj,row.term),keys=['4','3.5','3','2.5','2','1.5','1','0','ร','มส'];
+ const ts=bkSubjectTeachers(ctx,sj),hr=bkSplitTeachers(ctx.teacher),decided=keys.reduce((n,k)=>n+(row.counts[k]||0),0);
+ const val=v=>`<span class="st-val">${bkEsc(v)}</span>`;
+ const line=(l,v)=>`<div class="st-line"><span>${l}</span>${val(v)}</div>`;
+ const check='<span class="st-box"></span>';
+ return `<div class="a4-page cover st-cover"><style>
+ .a4-page.st-cover{padding:10mm 8mm;background:#fffdd0;color:#000;font:14pt/1.15 'TH Sarabun PSK','Sarabun',sans-serif;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .bk-mono .a4-page.st-cover{background:#fff!important} .st-frame{border:1.3px solid #222;min-height:275mm;display:flex;flex-direction:column}
+ .st-heading{text-align:center;border-bottom:1px solid #222;background:#eeedb8;padding:3mm 3mm 3mm;font-size:21pt;font-weight:700;line-height:1.15}
+ .st-curriculum{font-size:19pt;margin-top:1mm}
+ .st-body{padding:4mm 8mm 4mm;flex:1;display:flex;flex-direction:column;gap:1mm}
+ .st-class{text-align:center;font-size:18pt;font-weight:700;margin:1mm 0 2mm}
+ .st-line{display:flex;align-items:baseline;gap:1mm;min-height:5mm}
+ .st-line>span:first-child{flex-shrink:0}
+ .st-val{flex:1;min-width:0;min-height:4.5mm;border-bottom:1px dotted #555;padding:0 1mm;text-align:center;overflow-wrap:anywhere}
+ .st-pair{display:grid;grid-template-columns:1fr 1fr;gap:3mm}
+ .st-subject{display:grid;grid-template-columns:32mm 1fr;gap:3mm}
+ .st-center{display:flex;justify-content:center;gap:6mm}
+ .st-center .st-line{min-width:50mm}
+ .st-teachers{width:77%;margin:0 auto}
+ .st-teachers .st-line>span:first-child{width:24mm}
+ .st-section{text-align:center;font-size:17pt;font-weight:700;margin:1mm 0 2mm}
+ .st-att{width:85%;margin:1mm auto}
+ .st-att .st-line>span:first-child{width:83mm}
+ .st-pending{font-size:11pt;text-align:center;min-height:4mm}
+ .st-grades{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12pt}
+ .st-grades th,.st-grades td{border:1px solid #222;text-align:center;padding:1mm .25mm;height:7mm;font-weight:400}
+ .st-grades .st-table-title{font-size:17pt;font-weight:700}
+ .st-grades .st-row-label{width:25mm;text-align:left;padding-left:1mm}
+ .st-grades .st-total{width:22mm}.st-grades .st-note{width:20mm;font-size:11pt}
+ .st-approval{margin-top:auto;padding-top:2mm}
+ .st-review{display:grid;grid-template-columns:43mm 1fr;gap:0 2mm;align-items:baseline;min-height:7mm}
+ .st-sign{display:flex;align-items:baseline;gap:1mm}
+ .st-role{width:62mm;flex-shrink:0}
+ .st-box{display:inline-block;width:3.5mm;height:3.5mm;border:1px solid #222;vertical-align:-.5mm;margin-right:1mm}
+ .st-choice{display:flex;gap:8mm;margin-top:5mm;font-weight:700}
+ .st-director{width:78%;margin:4mm auto 0}
+ .st-date{font-size:13pt;margin-top:2mm}
+ </style><div class="st-frame">
+ <div class="st-heading">แบบบันทึกการพัฒนาคุณภาพนักเรียนประจำวิชา<br>ระดับมัธยมศึกษา<div class="st-curriculum">หลักสูตรแกนกลาง การศึกษาขั้นพื้นฐาน พุทธศักราช 2551</div></div>
+ <div class="st-body">
+ <div class="st-class">ชั้น${bkEsc(ctx.level)}${ctx.room?' / '+bkEsc(ctx.room):''}</div>
+ <div>${line('โรงเรียน',String(ctx.school||'เซนต์เทเรซา').replace(/^โรงเรียน\s*/,''))}
+ <div class="st-pair">${line('อำเภอ/เขต',sc.amphoe||'')}${line('จังหวัด',sc.prov||'')}</div>
+ <div class="st-pair">${line('เขตพื้นที่การศึกษา',sc.educationArea||sc.affil||'')}${line('เขต',sc.educationAreaNumber||'')}</div></div>
+ <div class="st-center">${line('ปีการศึกษา',ctx.year)}${line('ภาคเรียนที่',row.term)}</div>
+ <div><div class="st-subject">${line('รหัสวิชา',sj.code)}${line('รายวิชา',sj.name)}</div>
+ ${line('กลุ่มสาระการเรียนรู้',GROUP_LABEL[sj.group]||sj.group||'')}
+ <div class="st-center">${line('เวลาเรียน',sjHours(sj))}<span>ชั่วโมง</span></div></div>
+ <div class="st-teachers">${line('ครูผู้สอน',ts.join(' / '))}${line('ครูประจำชั้น 1.',hr[0]||'')}${line('2.',hr.slice(1).join(' / '))}</div>
+ <div class="st-att"><div class="st-section">สรุปเวลาเรียน</div>
+ <div class="st-line"><span>จำนวนนักเรียนทั้งสิ้น</span>${val(total||'')}<span>คน</span></div>
+ <div class="st-line"><span>จำนวนนักเรียนที่ผ่านเกณฑ์เวลาเรียน</span>${val(att?att.passed:'')}<span>คน</span></div>
+ <div class="st-line"><span>จำนวนนักเรียนที่ไม่ผ่านเกณฑ์เวลาเรียน</span>${val(att?att.failed.length:'')}<span>คน</span></div>
+ ${line('ได้แก่เลขที่',att?att.failed.join(', '):'')}
+ <div class="st-pending">${!att?'ยังไม่มีข้อมูลเพียงพอสำหรับสรุปเวลาเรียน':att.pending?'รอบันทึกเวลาเรียนครบ '+att.pending+' คน':''}</div></div>
+ <table class="st-grades"><colgroup><col class="st-row-label">${keys.map(()=>'<col>').join('')}<col class="st-total"><col class="st-note"></colgroup>
+ <thead><tr><th class="st-table-title" colspan="13">สรุปผลการเรียน</th></tr><tr><th>ระดับการเรียน</th>${keys.map(k=>`<th>${k==='มส'?'ม.ส.':k}</th>`).join('')}<th>รวมนักเรียน<br>ทั้งหมด</th><th>หมายเหตุ</th></tr></thead>
+ <tbody><tr><td class="st-row-label">จำนวนนักเรียน</td>${keys.map(k=>`<td>${total?(row.counts[k]||0):''}</td>`).join('')}<td>${total||''}</td><td rowspan="2" class="st-note">${total>decided?'รอผล '+(total-decided)+' คน':''}</td></tr>
+ <tr><td class="st-row-label">คิดเป็นร้อยละ</td>${keys.map(k=>`<td>${total?((row.counts[k]||0)/total*100).toFixed(2):''}</td>`).join('')}<td>${total?'100.00':''}</td></tr></tbody></table>
+ <div class="st-approval"><div class="st-section">การตัดสินอนุมัติผลการเรียน</div><b>การตรวจสอบความถูกต้อง</b>
+ ${['ครูประจำรายวิชา','หัวหน้ากลุ่มสาระฯ','หัวหน้างานวัดและประเมินผล','ผู้ช่วยผู้อำนวยการฝ่ายวิชาการ'].map(role=>`<div class="st-review"><div>${check}ผ่าน &nbsp; ${check}ไม่ผ่าน</div><div class="st-sign">${val('')}<span class="st-role">${role}</span></div></div>`).join('')}
+ <div class="st-choice"><span>การอนุมัติผลการเรียน</span><span>${check}อนุมัติ</span><span>${check}ไม่อนุมัติ</span></div>
+ <div class="st-director"><div class="st-sign">${val('')}<span>ผู้อำนวยการโรงเรียน</span></div>
+ ${ctx.principal?`<div style="text-align:center;font-size:13pt">(${bkEsc(ctx.principal)})</div>`:''}
+ <div class="st-line st-date"><span>วันที่</span>${val('')}<span>เดือน</span>${val('')}<span>พ.ศ.</span>${val('')}</div></div>
+ </div></div></div></div>`;
+}
+
+
+
+
+
 function bkBuildCoverSecPerSubject(ctx, sj, showTotal, printTerms=[1,2]){
   // ปวช. กิจกรรมเสริมหลักสูตร ตัดสินเป็น ผ่าน/ไม่ผ่าน → ตารางสรุปใช้คอลัมน์ ผ./ม.ผ. แทนระดับ 4–0
   const passFail=sjIsVocActivity(sj);
@@ -9619,6 +9712,7 @@ function bkBuildCoverSecPerSubject(ctx, sj, showTotal, printTerms=[1,2]){
   const ts=bkSubjectTeachers(ctx,sj);
 
   const termRowsForTable=termRows.map(r=>({...r,label:`ภาคเรียนที่ ${r.term}`,total}));
+  if(!isVoc())return termRows.map(row=>bkSaintSecondaryCover(ctx,sj,row,total)).join('');
 
   return`<div class="a4-page cover">
     ${bkCoverHeaderHTML(ctx,sj,{showCredit:true,homeroomLabel:'ครูที่ปรึกษา',term:printTerms.length===1?String(printTerms[0]):''})}
